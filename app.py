@@ -1,5 +1,6 @@
 from flask import Flask
 from datetime import datetime
+import yfinance as yf
 
 app = Flask(__name__)
 
