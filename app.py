@@ -36,7 +36,7 @@ def get_market_data():
     change = latest_close - previous_close
     percent_change = (change / previous_close) * 100
 
-        results.append({
+    results.append({
             "name": name,
             "price": latest_close,
             "change": change,
