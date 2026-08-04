@@ -13,8 +13,15 @@ MARKETS = {
 def get_market_data():
     results = []
 
-    for name, symbol in 
-    history =  yf.download(symbol, period="5d", interval="1d", progress=False, auto_adjust=False)
+for name, symbol in MARKETS.items():
+    history = yf.download(
+        symbol,
+        period="5d",
+        interval="1d",
+        progress=False,
+        auto_adjust=False,
+    )
+    
 
         if len(history) < 2:
             results.append({
