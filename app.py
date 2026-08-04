@@ -23,10 +23,10 @@ for name, symbol in MARKETS.items():
     )
     
 
-        if len(history) < 2:
-            results.append({
-                "name": name,
-                "error": "Market data unavailable"
+     if len(history) < 2:
+        results.append({
+            "name": name,
+            "error": "Market data unavailable"
             })
             continue
 
