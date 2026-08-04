@@ -33,9 +33,8 @@ def get_market_data():
 
     latest_close = float(close_prices.iloc[-1])
     previous_close = float(close_prices.iloc[-2])
-        
-        change = latest_close - previous_close
-        percent_change = (change / previous_close) * 100
+    change = latest_close - previous_close
+    percent_change = (change / previous_close) * 100
 
         results.append({
             "name": name,
