@@ -29,8 +29,11 @@ def get_market_data():
             })
             continue
 
-        latest_close = float(history["Close"].iloc[-1])
-        previous_close = float(history["Close"].iloc[-2])
+    close_prices = history["Close"].squeeze()
+
+    latest_close = float(close_prices.iloc[-1])
+    previous_close = float(close_prices.iloc[-2])
+        
         change = latest_close - previous_close
         percent_change = (change / previous_close) * 100
 
