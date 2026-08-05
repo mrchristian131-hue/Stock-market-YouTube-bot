@@ -20,6 +20,7 @@ def get_market_data():
             interval="1d",
             progress=False,
             auto_adjust=False,
+            multi_level_index=False,
         )
 
         if len(history) < 2:
