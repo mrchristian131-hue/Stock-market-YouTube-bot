@@ -64,7 +64,7 @@ def home():
                 <td>{market['name']}</td>
                 <td>{market['price']:,.2f}</td>
                 <td style="color:{color}">{market['change']:+,.2f}</td>
-                <td style="color:{color}">{market['percent']:+.2%}</td>
+                <td style="color:{color}">{market['percent']:+.2f}%</td>
                 
             </tr>
             """
