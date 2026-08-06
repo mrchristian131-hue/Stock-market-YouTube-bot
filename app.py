@@ -76,50 +76,50 @@ def home():
     <title>Stock Market YouTube Bot</title>
 
     <style>
-        body {
+        body {{
             background: #0b1220;
             color: white;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 24px;
-        }
+        }}
 
-        .dashboard {
+        .dashboard {{
             max-width: 800px;
             margin: auto;
             background: #111827;
             padding: 24px;
             border-radius: 16px;
-        }
+        }}
 
-        h1 {
+        h1 {{
             margin-top: 0;
-        }
+        }}
 
-        p {
+        p {{
             color: #aab4c5;
-        }
+        }}
 
-        table {
+        table {{
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             background: #182235;
-        }
+        }}
 
-        th, td {
+        th, td {{
             padding: 14px;
             text-align: left;
             border-bottom: 1px solid #334155;
-        }
+        }}
 
-        th {
+        th {{
             background: #1f2937;
-        }
+        }}
 
-        tr:last-child td {
+        tr:last-child td {{
             border-bottom: none;
-        }
+        }}
     </style>
 </head>
             
