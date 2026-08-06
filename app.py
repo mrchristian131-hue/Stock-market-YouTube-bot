@@ -30,14 +30,14 @@ def get_market_data():
             })
             continue
 
-    close_prices = history["Close"].squeeze()
+        close_prices = history["Close"].squeeze()
 
-    latest_close = float(close_prices.iloc[-1])
-    previous_close = float(close_prices.iloc[-2])
-    change = latest_close - previous_close
-    percent_change = (change / previous_close) * 100
+        latest_close = float(close_prices.iloc[-1])
+        previous_close = float(close_prices.iloc[-2])
+        change = latest_close - previous_close
+        percent_change = (change / previous_close) * 100
 
-    results.append({
+        results.append({
             "name": name,
             "price": latest_close,
             "change": change,
