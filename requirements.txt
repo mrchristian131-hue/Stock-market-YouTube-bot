@@ -2,3 +2,7 @@ Flask==3.1.1
 gunicorn==23.0.0
 yfinance
 openai
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+moviepy
