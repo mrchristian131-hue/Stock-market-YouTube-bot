@@ -54,6 +54,8 @@ def home():
     rows = ""
 
     for market in markets:
+        color = "green" if market.get("change", 0) >= 0 else "red"
+        
         if "error" in market:
             rows += f"<tr><td>{market['name']}</td><td colspan='3'>{market['error']}</td></tr>"
         else:
@@ -61,8 +63,9 @@ def home():
             <tr>
                 <td>{market['name']}</td>
                 <td>{market['price']:,.2f}</td>
-                <td>{market['change']:+,.2f}</td>
-                <td>{market['percent']:+.2f}%</td>
+                <td style="color:{color}">{market['change']:+,.2f}</td>
+                <td style="color:{color}">{market['percent']:+.2%}</td>
+                
             </tr>
             """
 
