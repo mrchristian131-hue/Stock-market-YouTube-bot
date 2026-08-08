@@ -20,7 +20,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-in-railway")
 
 MARKETS = {"S&P 500": "^GSPC", "Dow Jones": "^DJI", "Nasdaq": "^IXIC"}
-YOUTUBE_SCOPE = ["https://www.googleapis.com/auth/youtube.upload"]
+YOUTUBE_SCOPE = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly"
+]
 DEFAULT_BASE_URL = "https://stock-market-youtube-bot-production-42e0.up.railway.app"
 APP_BASE_URL = os.environ.get("APP_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
 REDIRECT_URI = f"{APP_BASE_URL}/oauth2callback"
