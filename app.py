@@ -192,6 +192,7 @@ def youtube_status():
             return "<h2>Connected, but no YouTube channel was found.</h2>", 404
         return f"<h2>YouTube connected successfully</h2><p>Channel: {items[0]['snippet']['title']}</p><p><a href='/'>Return to dashboard</a></p>"
     except Exception as exc:
+        print(f"YouTube status error: {type(exc).__name__}: {exc}", flush=True)
         return f"<h2>YouTube connection problem</h2><pre>{exc}</pre>", 500
 
 
