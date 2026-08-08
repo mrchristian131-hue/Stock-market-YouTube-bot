@@ -161,6 +161,7 @@ def authorize():
     authorization_url, state = flow.authorization_url(access_type="offline", include_granted_scopes="true", prompt="consent")
     flow.redirect_uri = REDIRECT_URI    
     session["oauth_state"] = state
+    session["code_verifier"] = flow.code_verifier
     return redirect(authorization_url)
 
 @app.route("/oauth2callback")
@@ -172,6 +173,7 @@ def oauth2callback():
     client_config(), scopes=YOUTUBE_SCOPE, state=state, redirect_uri=REDIRECT_URI
     )
     flow.redirect_uri = REDIRECT_URI
+    flow.code_verifier = session.get("code_verifier")
     flow.fetch_token(
     authorization_response=request.url
     )
