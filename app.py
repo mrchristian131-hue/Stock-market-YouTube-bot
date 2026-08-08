@@ -159,9 +159,9 @@ def home():
 def authorize():
     flow = Flow.from_client_config(client_config(), scopes=YOUTUBE_SCOPE, redirect_uri=REDIRECT_URI)
     authorization_url, state = flow.authorization_url(access_type="offline", include_granted_scopes="true", prompt="consent")
+    flow.redirect_uri = REDIRECT_URI    
     session["oauth_state"] = state
     return redirect(authorization_url)
-
 
 @app.route("/oauth2callback")
 def oauth2callback():
@@ -169,6 +169,7 @@ def oauth2callback():
     if not state:
         return "OAuth state is missing. Return home and tap Connect YouTube again.", 400
     flow = Flow.from_client_config(client_config(), scopes=YOUTUBE_SCOPE, state=state, redirect_uri=REDIRECT_URI)
+    flow.redirect_uri = REDIRECT_URI
     flow.fetch_token(authorization_response=request.url)
     token = flow.credentials.refresh_token
     if not token:
