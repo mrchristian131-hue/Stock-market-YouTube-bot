@@ -170,7 +170,10 @@ def oauth2callback():
         return "OAuth state is missing. Return home and tap Connect YouTube again.", 400
     flow = Flow.from_client_config(client_config(), scopes=YOUTUBE_SCOPE, state=state, redirect_uri=REDIRECT_URI)
     flow.redirect_uri = REDIRECT_URI
-    flow.fetch_token(authorization_response=request.url)
+    flow.fetch_token(
+    authorization_response=request.url,
+    redirect_uri=REDIRECT_URI
+)
     token = flow.credentials.refresh_token
     if not token:
         return "<h2>No refresh token was returned. Return home and reconnect.</h2>", 400
