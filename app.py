@@ -108,21 +108,20 @@ draw.text(
     fill=(170, 180, 197),
     font=load_font(34)
 )
-    y = 250
-    for market in markets:
-        if "error" in market:
+y = 250
+for market in markets:
+    if "error" in market:
             draw.text((80, y), f"{market['name']}: data unavailable", fill=(170, 180, 197), font=load_font(36))
-        else:
+    else:
             value_color = (55, 163, 27) if market["change"] >= 0 else (255, 51, 43)
             sign = "+" if market["change"] >= 0 else ""
             draw.text((80, y), market["name"], fill=(245, 247, 250), font=load_font(36))
             draw.text((460, y), f"{market['price']:,.2f}", fill=(245, 247, 250), font=load_font(36))
             draw.text((760, y), f"{sign}{market['change']:,.2f}", fill=value_color, font=load_font(36))
             draw.text((990, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(36))
-        y += 105
-    draw.text((70, 665), "Market data for informational purposes only.", fill=(170, 180, 197), font=load_font(26))
-    frame = np.asarray(image)
-    summary_image = Image.new("RGB", (width, height), (11, 18, 32))
+    y += 105
+draw.text((70, 665), "Market data for informational purposes only.", fill=(170, 180, 197), font=load_font(26))frame = np.asarray(image)
+summary_image = Image.new("RGB", (width, height), (11, 18, 32))
 summary_draw = ImageDraw.Draw(summary_image)
 
 summary_draw.text(
@@ -152,18 +151,18 @@ for market in markets:
         y2 += 90
 
 summary_frame = np.asarray(summary_image)
-    output_path = Path(tempfile.gettempdir()) / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp4"
-    writer = imageio.get_writer(output_path, fps=fps, codec="libx264", quality=8, macro_block_size=None)
-    try:
+output_path = Path(tempfile.gettempdir()) / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp3
+writer = imageio.get_writer(output_path, fps=fps, codec="libx264", quality=8, macro_block_size=None)
+try:
         for i in range(seconds * fps):
             if i < (seconds * fps) // 2:
                 writer.append_data(frame)
             else:
                 writer.append_data(summary_frame)
        
-    finally:
+finally:
         writer.close()
-    return output_path
+return output_path
 
 
 def upload_video(video_path, report_type, markets):
