@@ -95,8 +95,19 @@ def make_market_video(report_type, markets):
     width, height, fps, seconds = 1280, 720, 24, 6
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
-    draw.text((70, 55), f"Stock Market {report_type.title()}", fill=(245, 247, 250), font=load_font(64))
-    draw.text((70, 140), datetime.now().strftime("%A, %B %d, %Y"), fill=(170, 180, 197), font=load_font(34))
+    draw.text(
+    (70, 55),
+    "Mr. Christian - Daily Market Update",
+    fill=(245, 247, 250),
+    font=load_font(64)
+)
+
+draw.text(
+    (70, 140),
+    f"Stock Market {report_type.title()} - {datetime.now().strftime('%A, %B %d, %Y')}",
+    fill=(170, 180, 197),
+    font=load_font(34)
+)
     y = 250
     for market in markets:
         if "error" in market:
@@ -111,11 +122,45 @@ def make_market_video(report_type, markets):
         y += 105
     draw.text((70, 665), "Market data for informational purposes only.", fill=(170, 180, 197), font=load_font(26))
     frame = np.asarray(image)
+    summary_image = Image.new("RGB", (width, height), (11, 18, 32))
+summary_draw = ImageDraw.Draw(summary_image)
+
+summary_draw.text(
+    (70, 55),
+    "Market Snapshot",
+    fill=(245, 247, 250),
+    font=load_font(64)
+)
+
+summary_draw.text(
+    (70, 150),
+    "Major Index Performance",
+    fill=(170, 180, 197),
+    font=load_font(34)
+)
+
+y2 = 260
+for market in markets:
+    if "error" not in market:
+        sign = "+" if market["change"] >= 0 else ""
+        summary_draw.text(
+            (80, y2),
+            f"{market['name']}: {sign}{market['percent']:.2f}%",
+            fill=(245, 247, 250),
+            font=load_font(40)
+        )
+        y2 += 90
+
+summary_frame = np.asarray(summary_image)
     output_path = Path(tempfile.gettempdir()) / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp4"
     writer = imageio.get_writer(output_path, fps=fps, codec="libx264", quality=8, macro_block_size=None)
     try:
-        for _ in range(seconds * fps):
-            writer.append_data(frame)
+        for i in range(seconds * fps):
+            if i < (seconds * fps) // 2:
+                writer.append_data(frame)
+            else:
+                writer.append_data(summary_frame)
+       
     finally:
         writer.close()
     return output_path
