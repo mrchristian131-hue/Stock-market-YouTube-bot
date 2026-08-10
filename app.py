@@ -154,15 +154,15 @@ for market in markets:
 summary_frame = np.asarray(summary_image)
 output_path = Path(tempfile.gettempdir()) / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp4"
 writer = imageio.get_writer(output_path, fps=fps, codec="libx264", quality=8, macro_block_size=None)
-try:
+    try:
         for i in range(seconds * fps):
             if i < (seconds * fps) // 2:
                 writer.append_data(frame)
             else:
                 writer.append_data(summary_frame)
-       
     finally:
         writer.close()
+
     return output_path
 
 
