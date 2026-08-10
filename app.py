@@ -92,104 +92,140 @@ def load_font(size):
 
 
 def make_market_video(report_type, markets):
-    width, height, fps, seconds = 1280, 720, 24, 6
+    width, height, fps = 1280, 720, 24
+    scene_seconds = 10
 
-    # Scene 1: branded market board
+    def market_rows(draw, start_y=230, font_size=34):
+        y = start_y
+        for market in markets:
+            if "error" in market:
+                draw.text(
+                    (80, y),
+                    f"{market['name']}: data unavailable",
+                    fill=(170, 180, 197),
+                    font=load_font(font_size),
+                )
+            else:
+                value_color = (55, 163, 27) if market["change"] >= 0 else (255, 51, 43)
+                sign = "+" if market["change"] >= 0 else ""
+                draw.text((80, y), market["name"], fill=(245, 247, 250), font=load_font(font_size))
+                draw.text((450, y), f"{market['price']:,.2f}", fill=(245, 247, 250), font=load_font(font_size))
+                draw.text((745, y), f"{sign}{market['change']:,.2f}", fill=value_color, font=load_font(font_size))
+                draw.text((985, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(font_size))
+            y += 100
+
+    valid_markets = [m for m in markets if "error" not in m]
+    avg_percent = (
+        sum(m["percent"] for m in valid_markets) / len(valid_markets)
+        if valid_markets else 0
+    )
+
+    strongest = max(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
+    weakest = min(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
+
+    if avg_percent > 0.25:
+        tone = "Broad market tone: positive"
+    elif avg_percent < -0.25:
+        tone = "Broad market tone: cautious"
+    else:
+        tone = "Broad market tone: mixed"
+
+    scenes = []
+
+    # Scene 1 â branded intro
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
-
+    draw.text((70, 70), "Mr. Christian", fill=(245, 247, 250), font=load_font(72))
+    draw.text((70, 175), "Daily Market Update", fill=(170, 180, 197), font=load_font(48))
     draw.text(
-        (70, 55),
-        "Mr. Christian - Daily Market Update",
+        (70, 285),
+        f"Stock Market {report_type.title()}",
         fill=(245, 247, 250),
-        font=load_font(58),
+        font=load_font(54),
     )
-
     draw.text(
-        (70, 135),
-        f"Stock Market {report_type.title()} - {datetime.now().strftime('%A, %B %d, %Y')}",
+        (70, 365),
+        datetime.now().strftime("%A, %B %d, %Y"),
         fill=(170, 180, 197),
-        font=load_font(32),
+        font=load_font(34),
     )
+    draw.text((70, 610), "Private preview â¢ Music-free", fill=(170, 180, 197), font=load_font(26))
+    scenes.append(np.asarray(image))
 
-    y = 240
-    for market in markets:
-        if "error" in market:
-            draw.text(
-                (80, y),
-                f"{market['name']}: data unavailable",
-                fill=(170, 180, 197),
-                font=load_font(32),
-            )
-        else:
-            value_color = (55, 163, 27) if market["change"] >= 0 else (255, 51, 43)
-            sign = "+" if market["change"] >= 0 else ""
-            draw.text(
-                (80, y),
-                market["name"],
-                fill=(245, 247, 250),
-                font=load_font(36),
-            )
-            draw.text(
-                (460, y),
-                f"{market['price']:,.2f}",
-                fill=(245, 247, 250),
-                font=load_font(36),
-            )
-            draw.text(
-                (760, y),
-                f"{sign}{market['change']:,.2f}",
-                fill=value_color,
-                font=load_font(36),
-            )
-            draw.text(
-                (990, y),
-                f"{sign}{market['percent']:.2f}%",
-                fill=value_color,
-                font=load_font(36),
-            )
+    # Scene 2 â index board
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Major Index Board", fill=(245, 247, 250), font=load_font(58))
+    draw.text((80, 155), "INDEX", fill=(170, 180, 197), font=load_font(28))
+    draw.text((450, 155), "PRICE", fill=(170, 180, 197), font=load_font(28))
+    draw.text((745, 155), "CHANGE", fill=(170, 180, 197), font=load_font(28))
+    draw.text((985, 155), "PERCENT", fill=(170, 180, 197), font=load_font(28))
+    market_rows(draw)
+    scenes.append(np.asarray(image))
+
+    # Scene 3 â leadership
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Market Leadership", fill=(245, 247, 250), font=load_font(58))
+    draw.text((70, 150), tone, fill=(170, 180, 197), font=load_font(34))
+    if strongest:
+        s_sign = "+" if strongest["percent"] >= 0 else ""
+        draw.text((80, 270), "Strongest index", fill=(170, 180, 197), font=load_font(30))
+        draw.text(
+            (80, 325),
+            f"{strongest['name']}  {s_sign}{strongest['percent']:.2f}%",
+            fill=(245, 247, 250),
+            font=load_font(48),
+        )
+    if weakest:
+        w_sign = "+" if weakest["percent"] >= 0 else ""
+        draw.text((80, 455), "Weakest index", fill=(170, 180, 197), font=load_font(30))
+        draw.text(
+            (80, 510),
+            f"{weakest['name']}  {w_sign}{weakest['percent']:.2f}%",
+            fill=(245, 247, 250),
+            font=load_font(48),
+        )
+    scenes.append(np.asarray(image))
+
+    # Scene 4 â what to watch
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "What To Watch", fill=(245, 247, 250), font=load_font(58))
+    watch_items = [
+        "â¢ Whether early index direction holds",
+        "â¢ Leadership between the Dow, S&P 500 and Nasdaq",
+        "â¢ Changes in market breadth and momentum",
+        "â¢ New economic, earnings and company headlines",
+    ]
+    y = 180
+    for item in watch_items:
+        draw.text((90, y), item, fill=(245, 247, 250), font=load_font(34))
         y += 105
+    scenes.append(np.asarray(image))
 
+    # Scene 5 â recap
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Market Snapshot Recap", fill=(245, 247, 250), font=load_font(58))
+    y = 185
+    for market in valid_markets:
+        sign = "+" if market["percent"] >= 0 else ""
+        color = (55, 163, 27) if market["percent"] >= 0 else (255, 51, 43)
+        draw.text(
+            (90, y),
+            f"{market['name']}: {sign}{market['percent']:.2f}%",
+            fill=color,
+            font=load_font(44),
+        )
+        y += 105
     draw.text(
-        (70, 665),
-        "Market data for informational purposes only.",
+        (70, 645),
+        "For informational purposes only. Not financial advice.",
         fill=(170, 180, 197),
         font=load_font(24),
     )
-
-    frame = np.asarray(image)
-
-    # Scene 2: market snapshot
-    summary_image = Image.new("RGB", (width, height), (11, 18, 32))
-    summary_draw = ImageDraw.Draw(summary_image)
-
-    summary_draw.text(
-        (70, 55),
-        "Market Snapshot",
-        fill=(245, 247, 250),
-        font=load_font(58),
-    )
-
-    summary_draw.text(
-        (70, 140),
-        "Major Index Performance",
-        fill=(170, 180, 197),
-        font=load_font(32),
-    )
-
-    y2 = 250
-    for market in markets:
-        if "error" not in market:
-            sign = "+" if market["change"] >= 0 else ""
-            summary_draw.text(
-                (80, y2),
-                f"{market['name']}: {sign}{market['percent']:.2f}%",
-                fill=(245, 247, 250),
-                font=load_font(42),
-            )
-            y2 += 100
-
-    summary_frame = np.asarray(summary_image)
+    scenes.append(np.asarray(image))
 
     output_path = (
         Path(tempfile.gettempdir())
@@ -200,14 +236,15 @@ def make_market_video(report_type, markets):
         output_path,
         fps=fps,
         codec="libx264",
+        quality=8,
+        macro_block_size=None,
     )
 
     try:
-        for i in range(seconds * fps):
-            if i < (seconds * fps) // 2:
-                writer.append_data(frame)
-            else:
-                writer.append_data(summary_frame)
+        frames_per_scene = scene_seconds * fps
+        for scene in scenes:
+            for _ in range(frames_per_scene):
+                writer.append_data(scene)
     finally:
         writer.close()
 
