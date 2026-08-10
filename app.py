@@ -93,68 +93,114 @@ def load_font(size):
 
 def make_market_video(report_type, markets):
     width, height, fps, seconds = 1280, 720, 24, 6
+
+    # Scene 1: branded market board
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
-    draw.text(
-    (70, 55),
-    "Mr. Christian - Daily Market Update",
-    fill=(245, 247, 250),
-    font=load_font(64)
-)
 
-draw.text(
-    (70, 140),
-    f"Stock Market {report_type.title()} - {datetime.now().strftime('%A, %B %d, %Y')}",
-    fill=(170, 180, 197),
-    font=load_font(34)
-)
-y = 250
-for market in markets:
-    if "error" in market:
-            draw.text((80, y), f"{market['name']}: data unavailable", fill=(170, 180, 197), font=load_font(36))
-    else:
+    draw.text(
+        (70, 55),
+        "Mr. Christian - Daily Market Update",
+        fill=(245, 247, 250),
+        font=load_font(58),
+    )
+
+    draw.text(
+        (70, 135),
+        f"Stock Market {report_type.title()} - {datetime.now().strftime('%A, %B %d, %Y')}",
+        fill=(170, 180, 197),
+        font=load_font(32),
+    )
+
+    y = 240
+    for market in markets:
+        if "error" in market:
+            draw.text(
+                (80, y),
+                f"{market['name']}: data unavailable",
+                fill=(170, 180, 197),
+                font=load_font(32),
+            )
+        else:
             value_color = (55, 163, 27) if market["change"] >= 0 else (255, 51, 43)
             sign = "+" if market["change"] >= 0 else ""
-            draw.text((80, y), market["name"], fill=(245, 247, 250), font=load_font(36))
-            draw.text((460, y), f"{market['price']:,.2f}", fill=(245, 247, 250), font=load_font(36))
-            draw.text((760, y), f"{sign}{market['change']:,.2f}", fill=value_color, font=load_font(36))
-            draw.text((990, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(36))
-    y += 105
-draw.text((70, 665), "Market data for informational purposes only.", fill=(170, 180, 197), font=load_font(26))
-frame = np.asarray(image)
-summary_image = Image.new("RGB", (width, height), (11, 18, 32))
-summary_draw = ImageDraw.Draw(summary_image)
+            draw.text(
+                (80, y),
+                market["name"],
+                fill=(245, 247, 250),
+                font=load_font(36),
+            )
+            draw.text(
+                (460, y),
+                f"{market['price']:,.2f}",
+                fill=(245, 247, 250),
+                font=load_font(36),
+            )
+            draw.text(
+                (760, y),
+                f"{sign}{market['change']:,.2f}",
+                fill=value_color,
+                font=load_font(36),
+            )
+            draw.text(
+                (990, y),
+                f"{sign}{market['percent']:.2f}%",
+                fill=value_color,
+                font=load_font(36),
+            )
+        y += 105
 
-summary_draw.text(
-    (70, 55),
-    "Market Snapshot",
-    fill=(245, 247, 250),
-    font=load_font(64)
-)
+    draw.text(
+        (70, 665),
+        "Market data for informational purposes only.",
+        fill=(170, 180, 197),
+        font=load_font(24),
+    )
 
-summary_draw.text(
-    (70, 150),
-    "Major Index Performance",
-    fill=(170, 180, 197),
-    font=load_font(34)
-)
+    frame = np.asarray(image)
 
-y2 = 260
-for market in markets:
-    if "error" not in market:
-        sign = "+" if market["change"] >= 0 else ""
-        summary_draw.text(
-            (80, y2),
-            f"{market['name']}: {sign}{market['percent']:.2f}%",
-            fill=(245, 247, 250),
-            font=load_font(40)
-        )
-        y2 += 90
+    # Scene 2: market snapshot
+    summary_image = Image.new("RGB", (width, height), (11, 18, 32))
+    summary_draw = ImageDraw.Draw(summary_image)
+
+    summary_draw.text(
+        (70, 55),
+        "Market Snapshot",
+        fill=(245, 247, 250),
+        font=load_font(58),
+    )
+
+    summary_draw.text(
+        (70, 140),
+        "Major Index Performance",
+        fill=(170, 180, 197),
+        font=load_font(32),
+    )
+
+    y2 = 250
+    for market in markets:
+        if "error" not in market:
+            sign = "+" if market["change"] >= 0 else ""
+            summary_draw.text(
+                (80, y2),
+                f"{market['name']}: {sign}{market['percent']:.2f}%",
+                fill=(245, 247, 250),
+                font=load_font(42),
+            )
+            y2 += 100
 
     summary_frame = np.asarray(summary_image)
 
-    output_path = Path(tempfile.gettempdir()) / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp4"
-    writer = imageio.get_writer(output_path, fps=fps, codec="libx264")
+    output_path = (
+        Path(tempfile.gettempdir())
+        / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp4"
+    )
+
+    writer = imageio.get_writer(
+        output_path,
+        fps=fps,
+        codec="libx264",
+    )
 
     try:
         for i in range(seconds * fps):
@@ -275,4 +321,3 @@ def run_close():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")))
-
