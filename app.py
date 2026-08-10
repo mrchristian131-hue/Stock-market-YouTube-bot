@@ -161,9 +161,9 @@ try:
             else:
                 writer.append_data(summary_frame)
        
-finally:
+    finally:
         writer.close()
-return output_path
+    return output_path
 
 
 def upload_video(video_path, report_type, markets):
