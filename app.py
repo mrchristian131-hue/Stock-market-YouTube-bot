@@ -120,7 +120,8 @@ for market in markets:
             draw.text((760, y), f"{sign}{market['change']:,.2f}", fill=value_color, font=load_font(36))
             draw.text((990, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(36))
     y += 105
-draw.text((70, 665), "Market data for informational purposes only.", fill=(170, 180, 197), font=load_font(26))frame = np.asarray(image)
+draw.text((70, 665), "Market data for informational purposes only.", fill=(170, 180, 197), font=load_font(26))
+frame = np.asarray(image)
 summary_image = Image.new("RGB", (width, height), (11, 18, 32))
 summary_draw = ImageDraw.Draw(summary_image)
 
