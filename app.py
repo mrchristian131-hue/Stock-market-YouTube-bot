@@ -1,9 +1,12 @@
 import os
+import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
 
+import edge_tts
 import imageio.v2 as imageio
+import imageio_ffmpeg
 import numpy as np
 import yfinance as yf
 from flask import Flask, redirect, render_template_string, request, session
@@ -93,7 +96,66 @@ def load_font(size):
 
 def make_market_video(report_type, markets):
     width, height, fps = 1280, 720, 24
-    scene_seconds = 10
+    scene_seconds = 22
+
+    valid_markets = [m for m in markets if "error" not in m]
+    avg_percent = (
+        sum(m["percent"] for m in valid_markets) / len(valid_markets)
+        if valid_markets else 0
+    )
+    strongest = max(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
+    weakest = min(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
+
+    if avg_percent > 0.25:
+        tone = "positive"
+        tone_sentence = "The broad market tone is positive so far."
+    elif avg_percent < -0.25:
+        tone = "cautious"
+        tone_sentence = "The broad market tone is cautious so far."
+    else:
+        tone = "mixed"
+        tone_sentence = "The broad market tone is mixed so far."
+
+    def pct_line(market):
+        sign = "+" if market["percent"] >= 0 else ""
+        return f"{market['name']} is {sign}{market['percent']:.2f} percent"
+
+    index_sentences = ". ".join(pct_line(m) for m in valid_markets)
+    if index_sentences:
+        index_sentences += "."
+
+    leader_sentence = ""
+    if strongest and weakest:
+        leader_sentence = (
+            f"The strongest of the three major indexes is {strongest['name']} at "
+            f"{'+' if strongest['percent'] >= 0 else ''}{strongest['percent']:.2f} percent. "
+            f"The weakest is {weakest['name']} at "
+            f"{'+' if weakest['percent'] >= 0 else ''}{weakest['percent']:.2f} percent."
+        )
+
+    narration = (
+        f"Welcome to the Mr. Christian Daily Market Update for "
+        f"{datetime.now().strftime('%A, %B %d, %Y')}. "
+        f"This is the stock market {report_type.lower()} report. "
+        f"We are starting with the three major United States stock indexes. "
+        f"{index_sentences} "
+        f"{tone_sentence} "
+        f"{leader_sentence} "
+        f"What matters next is whether this early direction can hold. "
+        f"Watch the relationship between the Dow Jones, the S and P 500, and the Nasdaq. "
+        f"When the indexes move together, that can signal broader participation. "
+        f"When they split apart, leadership may be concentrated in only part of the market. "
+        f"Investors should also pay attention to new earnings reports, economic releases, "
+        f"interest-rate expectations, and company-specific headlines that can change momentum "
+        f"throughout the session. "
+        f"For this {report_type.lower()} update, the overall market tone is {tone}. "
+        f"The strongest and weakest indexes can help show where leadership and pressure are developing. "
+        f"Keep in mind that index moves can change quickly after the opening bell as volume increases "
+        f"and new information is priced into the market. "
+        f"We will continue to focus on direction, leadership, momentum, and the major indexes. "
+        f"This report is for informational purposes only and is not financial advice. "
+        f"This is Mr. Christian with your Daily Market Update."
+    )
 
     def market_rows(draw, start_y=230, font_size=34):
         y = start_y
@@ -114,45 +176,17 @@ def make_market_video(report_type, markets):
                 draw.text((985, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(font_size))
             y += 100
 
-    valid_markets = [m for m in markets if "error" not in m]
-    avg_percent = (
-        sum(m["percent"] for m in valid_markets) / len(valid_markets)
-        if valid_markets else 0
-    )
-
-    strongest = max(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
-    weakest = min(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
-
-    if avg_percent > 0.25:
-        tone = "Broad market tone: positive"
-    elif avg_percent < -0.25:
-        tone = "Broad market tone: cautious"
-    else:
-        tone = "Broad market tone: mixed"
-
     scenes = []
 
-    # Scene 1 â branded intro
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 70), "Mr. Christian", fill=(245, 247, 250), font=load_font(72))
     draw.text((70, 175), "Daily Market Update", fill=(170, 180, 197), font=load_font(48))
-    draw.text(
-        (70, 285),
-        f"Stock Market {report_type.title()}",
-        fill=(245, 247, 250),
-        font=load_font(54),
-    )
-    draw.text(
-        (70, 365),
-        datetime.now().strftime("%A, %B %d, %Y"),
-        fill=(170, 180, 197),
-        font=load_font(34),
-    )
-    draw.text((70, 610), "Private preview â¢ Music-free", fill=(170, 180, 197), font=load_font(26))
+    draw.text((70, 285), f"Stock Market {report_type.title()}", fill=(245, 247, 250), font=load_font(54))
+    draw.text((70, 365), datetime.now().strftime("%A, %B %d, %Y"), fill=(170, 180, 197), font=load_font(34))
+    draw.text((70, 610), "Narrated private preview", fill=(170, 180, 197), font=load_font(26))
     scenes.append(np.asarray(image))
 
-    # Scene 2 â index board
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 55), "Major Index Board", fill=(245, 247, 250), font=load_font(58))
@@ -163,48 +197,58 @@ def make_market_video(report_type, markets):
     market_rows(draw)
     scenes.append(np.asarray(image))
 
-    # Scene 3 â leadership
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 55), "Market Leadership", fill=(245, 247, 250), font=load_font(58))
-    draw.text((70, 150), tone, fill=(170, 180, 197), font=load_font(34))
+    draw.text((70, 150), f"Broad market tone: {tone}", fill=(170, 180, 197), font=load_font(34))
     if strongest:
-        s_sign = "+" if strongest["percent"] >= 0 else ""
-        draw.text((80, 270), "Strongest index", fill=(170, 180, 197), font=load_font(30))
+        draw.text((80, 280), "Strongest index", fill=(170, 180, 197), font=load_font(30))
         draw.text(
-            (80, 325),
-            f"{strongest['name']}  {s_sign}{strongest['percent']:.2f}%",
+            (80, 340),
+            f"{strongest['name']}  {'+' if strongest['percent'] >= 0 else ''}{strongest['percent']:.2f}%",
             fill=(245, 247, 250),
             font=load_font(48),
         )
     if weakest:
-        w_sign = "+" if weakest["percent"] >= 0 else ""
-        draw.text((80, 455), "Weakest index", fill=(170, 180, 197), font=load_font(30))
+        draw.text((80, 470), "Weakest index", fill=(170, 180, 197), font=load_font(30))
         draw.text(
-            (80, 510),
-            f"{weakest['name']}  {w_sign}{weakest['percent']:.2f}%",
+            (80, 530),
+            f"{weakest['name']}  {'+' if weakest['percent'] >= 0 else ''}{weakest['percent']:.2f}%",
             fill=(245, 247, 250),
             font=load_font(48),
         )
     scenes.append(np.asarray(image))
 
-    # Scene 4 â what to watch
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 55), "What To Watch", fill=(245, 247, 250), font=load_font(58))
-    watch_items = [
-        "â¢ Whether early index direction holds",
-        "â¢ Leadership between the Dow, S&P 500 and Nasdaq",
-        "â¢ Changes in market breadth and momentum",
-        "â¢ New economic, earnings and company headlines",
+    items = [
+        "â¢ Does the opening direction hold?",
+        "â¢ Are all three major indexes participating?",
+        "â¢ Is leadership broad or concentrated?",
+        "â¢ Do new headlines change momentum?",
     ]
     y = 180
-    for item in watch_items:
+    for item in items:
         draw.text((90, y), item, fill=(245, 247, 250), font=load_font(34))
         y += 105
     scenes.append(np.asarray(image))
 
-    # Scene 5 â recap
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Market Drivers", fill=(245, 247, 250), font=load_font(58))
+    drivers = [
+        "Earnings and company news",
+        "Economic data",
+        "Interest-rate expectations",
+        "Momentum and trading volume",
+    ]
+    y = 190
+    for driver in drivers:
+        draw.text((100, y), driver, fill=(245, 247, 250), font=load_font(38))
+        y += 105
+    scenes.append(np.asarray(image))
+
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 55), "Market Snapshot Recap", fill=(245, 247, 250), font=load_font(58))
@@ -212,28 +256,20 @@ def make_market_video(report_type, markets):
     for market in valid_markets:
         sign = "+" if market["percent"] >= 0 else ""
         color = (55, 163, 27) if market["percent"] >= 0 else (255, 51, 43)
-        draw.text(
-            (90, y),
-            f"{market['name']}: {sign}{market['percent']:.2f}%",
-            fill=color,
-            font=load_font(44),
-        )
+        draw.text((90, y), f"{market['name']}: {sign}{market['percent']:.2f}%", fill=color, font=load_font(44))
         y += 105
-    draw.text(
-        (70, 645),
-        "For informational purposes only. Not financial advice.",
-        fill=(170, 180, 197),
-        font=load_font(24),
-    )
+    draw.text((70, 645), "Informational purposes only â¢ Not financial advice", fill=(170, 180, 197), font=load_font(24))
     scenes.append(np.asarray(image))
 
-    output_path = (
+    silent_path = (
         Path(tempfile.gettempdir())
-        / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}.mp4"
+        / f"market-{report_type.lower()}-{datetime.now():%Y%m%d-%H%M%S}-silent.mp4"
     )
+    audio_path = silent_path.with_suffix(".mp3")
+    narrated_path = silent_path.with_name(silent_path.stem.replace("-silent", "-narrated") + ".mp4")
 
     writer = imageio.get_writer(
-        output_path,
+        silent_path,
         fps=fps,
         codec="libx264",
         quality=8,
@@ -248,7 +284,36 @@ def make_market_video(report_type, markets):
     finally:
         writer.close()
 
-    return output_path
+    # Narration is best-effort: if online TTS fails, the bot still uploads the silent video.
+    try:
+        voice = os.environ.get("TTS_VOICE", "en-US-GuyNeural")
+        edge_tts.Communicate(
+            narration,
+            voice=voice,
+            rate="+2%",
+        ).save_sync(str(audio_path))
+
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        subprocess.run(
+            [
+                ffmpeg,
+                "-y",
+                "-i", str(silent_path),
+                "-i", str(audio_path),
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-shortest",
+                str(narrated_path),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return narrated_path
+    except Exception as exc:
+        print(f"Narration unavailable; using silent video: {exc}")
+        return silent_path
 
 
 def upload_video(video_path, report_type, markets):
