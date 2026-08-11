@@ -54,6 +54,55 @@ def get_market_data():
     return results
 
 
+SECTOR_ETFS = {
+    "Technology": "XLK",
+    "Financials": "XLF",
+    "Energy": "XLE",
+    "Health Care": "XLV",
+    "Consumer Discretionary": "XLY",
+    "Consumer Staples": "XLP",
+    "Industrials": "XLI",
+    "Materials": "XLB",
+    "Utilities": "XLU",
+    "Real Estate": "XLRE",
+    "Communication Services": "XLC",
+}
+
+
+def get_sector_data():
+    sectors = []
+    for name, symbol in SECTOR_ETFS.items():
+        try:
+            history = yf.download(
+                symbol,
+                period="5d",
+                interval="1d",
+                progress=False,
+                auto_adjust=False,
+                multi_level_index=False,
+            )
+            close_prices = history["Close"].dropna()
+            if len(close_prices) < 2:
+                sectors.append({"name": name, "error": "Sector data unavailable"})
+                continue
+
+            latest_close = float(close_prices.iloc[-1])
+            previous_close = float(close_prices.iloc[-2])
+            change = latest_close - previous_close
+            percent_change = (change / previous_close) * 100
+
+            sectors.append({
+                "name": name,
+                "symbol": symbol,
+                "price": latest_close,
+                "change": change,
+                "percent": percent_change,
+            })
+        except Exception as exc:
+            sectors.append({"name": name, "error": str(exc)})
+    return sectors
+
+
 def client_config():
     client_id = os.environ.get("YOUTUBE_CLIENT_ID")
     client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
@@ -96,15 +145,20 @@ def load_font(size):
 
 def make_market_video(report_type, markets):
     width, height, fps = 1280, 720, 24
-    scene_seconds = 22
+    scene_seconds = 24
+    sectors = get_sector_data()
 
     valid_markets = [m for m in markets if "error" not in m]
+    valid_sectors = [s for s in sectors if "error" not in s]
+
     avg_percent = (
         sum(m["percent"] for m in valid_markets) / len(valid_markets)
         if valid_markets else 0
     )
     strongest = max(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
     weakest = min(valid_markets, key=lambda m: m["percent"]) if valid_markets else None
+    strongest_sectors = sorted(valid_sectors, key=lambda s: s["percent"], reverse=True)[:3]
+    weakest_sectors = sorted(valid_sectors, key=lambda s: s["percent"])[:3]
 
     if avg_percent > 0.25:
         tone = "positive"
@@ -116,9 +170,9 @@ def make_market_video(report_type, markets):
         tone = "mixed"
         tone_sentence = "The broad market tone is mixed so far."
 
-    def pct_line(market):
-        sign = "+" if market["percent"] >= 0 else ""
-        return f"{market['name']} is {sign}{market['percent']:.2f} percent"
+    def pct_line(item):
+        sign = "+" if item["percent"] >= 0 else ""
+        return f"{item['name']} is {sign}{item['percent']:.2f} percent"
 
     index_sentences = ". ".join(pct_line(m) for m in valid_markets)
     if index_sentences:
@@ -133,26 +187,48 @@ def make_market_video(report_type, markets):
             f"{'+' if weakest['percent'] >= 0 else ''}{weakest['percent']:.2f} percent."
         )
 
+    sector_leader_sentence = ""
+    if strongest_sectors:
+        sector_leader_sentence = (
+            "Leading sectors include "
+            + ", ".join(
+                f"{s['name']} at {'+' if s['percent'] >= 0 else ''}{s['percent']:.2f} percent"
+                for s in strongest_sectors
+            )
+            + "."
+        )
+
+    sector_laggard_sentence = ""
+    if weakest_sectors:
+        sector_laggard_sentence = (
+            "The weakest sector groups include "
+            + ", ".join(
+                f"{s['name']} at {'+' if s['percent'] >= 0 else ''}{s['percent']:.2f} percent"
+                for s in weakest_sectors
+            )
+            + "."
+        )
+
     narration = (
         f"Welcome to the Mr. Christian Daily Market Update for "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
         f"This is the stock market {report_type.lower()} report. "
-        f"We are starting with the three major United States stock indexes. "
-        f"{index_sentences} "
-        f"{tone_sentence} "
-        f"{leader_sentence} "
-        f"What matters next is whether this early direction can hold. "
+        f"We begin with the major United States stock indexes. "
+        f"{index_sentences} {tone_sentence} {leader_sentence} "
+        f"Now let's look beneath the surface at sector performance. "
+        f"{sector_leader_sentence} {sector_laggard_sentence} "
+        f"Sector leadership matters because it shows where investors are concentrating buying pressure "
+        f"and where selling pressure is strongest. "
+        f"A market can look healthy at the index level while only a few sectors are doing the heavy lifting. "
+        f"Broad participation across technology, financials, industrials, consumer groups, health care, energy, "
+        f"and other sectors can support a stronger overall tone. "
+        f"What matters next is whether the opening direction can hold as trading volume builds. "
         f"Watch the relationship between the Dow Jones, the S and P 500, and the Nasdaq. "
-        f"When the indexes move together, that can signal broader participation. "
-        f"When they split apart, leadership may be concentrated in only part of the market. "
-        f"Investors should also pay attention to new earnings reports, economic releases, "
-        f"interest-rate expectations, and company-specific headlines that can change momentum "
-        f"throughout the session. "
+        f"Also watch whether today's strongest sectors keep their leadership or begin to fade. "
+        f"Investors should continue to monitor earnings reports, economic releases, interest-rate expectations, "
+        f"and company-specific headlines that can change momentum during the session. "
         f"For this {report_type.lower()} update, the overall market tone is {tone}. "
-        f"The strongest and weakest indexes can help show where leadership and pressure are developing. "
-        f"Keep in mind that index moves can change quickly after the opening bell as volume increases "
-        f"and new information is priced into the market. "
-        f"We will continue to focus on direction, leadership, momentum, and the major indexes. "
+        f"We will keep focusing on direction, leadership, breadth, momentum, and sector rotation. "
         f"This report is for informational purposes only and is not financial advice. "
         f"This is Mr. Christian with your Daily Market Update."
     )
@@ -161,12 +237,8 @@ def make_market_video(report_type, markets):
         y = start_y
         for market in markets:
             if "error" in market:
-                draw.text(
-                    (80, y),
-                    f"{market['name']}: data unavailable",
-                    fill=(170, 180, 197),
-                    font=load_font(font_size),
-                )
+                draw.text((80, y), f"{market['name']}: data unavailable",
+                          fill=(170, 180, 197), font=load_font(font_size))
             else:
                 value_color = (55, 163, 27) if market["change"] >= 0 else (255, 51, 43)
                 sign = "+" if market["change"] >= 0 else ""
@@ -199,24 +271,40 @@ def make_market_video(report_type, markets):
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Market Leadership", fill=(245, 247, 250), font=load_font(58))
+    draw.text((70, 55), "Index Leadership", fill=(245, 247, 250), font=load_font(58))
     draw.text((70, 150), f"Broad market tone: {tone}", fill=(170, 180, 197), font=load_font(34))
     if strongest:
         draw.text((80, 280), "Strongest index", fill=(170, 180, 197), font=load_font(30))
-        draw.text(
-            (80, 340),
-            f"{strongest['name']}  {'+' if strongest['percent'] >= 0 else ''}{strongest['percent']:.2f}%",
-            fill=(245, 247, 250),
-            font=load_font(48),
-        )
+        draw.text((80, 340), f"{strongest['name']}  {'+' if strongest['percent'] >= 0 else ''}{strongest['percent']:.2f}%",
+                  fill=(245, 247, 250), font=load_font(48))
     if weakest:
         draw.text((80, 470), "Weakest index", fill=(170, 180, 197), font=load_font(30))
-        draw.text(
-            (80, 530),
-            f"{weakest['name']}  {'+' if weakest['percent'] >= 0 else ''}{weakest['percent']:.2f}%",
-            fill=(245, 247, 250),
-            font=load_font(48),
-        )
+        draw.text((80, 530), f"{weakest['name']}  {'+' if weakest['percent'] >= 0 else ''}{weakest['percent']:.2f}%",
+                  fill=(245, 247, 250), font=load_font(48))
+    scenes.append(np.asarray(image))
+
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Sector Leaders", fill=(245, 247, 250), font=load_font(58))
+    y = 190
+    for sector in strongest_sectors:
+        sign = "+" if sector["percent"] >= 0 else ""
+        draw.text((90, y), f"{sector['name']}: {sign}{sector['percent']:.2f}%",
+                  fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
+                  font=load_font(42))
+        y += 120
+    scenes.append(np.asarray(image))
+
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Sector Laggards", fill=(245, 247, 250), font=load_font(58))
+    y = 190
+    for sector in weakest_sectors:
+        sign = "+" if sector["percent"] >= 0 else ""
+        draw.text((90, y), f"{sector['name']}: {sign}{sector['percent']:.2f}%",
+                  fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
+                  font=load_font(42))
+        y += 120
     scenes.append(np.asarray(image))
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
@@ -224,8 +312,8 @@ def make_market_video(report_type, markets):
     draw.text((70, 55), "What To Watch", fill=(245, 247, 250), font=load_font(58))
     items = [
         "â¢ Does the opening direction hold?",
-        "â¢ Are all three major indexes participating?",
-        "â¢ Is leadership broad or concentrated?",
+        "â¢ Do leading sectors keep their strength?",
+        "â¢ Does market breadth improve or weaken?",
         "â¢ Do new headlines change momentum?",
     ]
     y = 180
@@ -236,29 +324,18 @@ def make_market_video(report_type, markets):
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Market Drivers", fill=(245, 247, 250), font=load_font(58))
-    drivers = [
-        "Earnings and company news",
-        "Economic data",
-        "Interest-rate expectations",
-        "Momentum and trading volume",
-    ]
-    y = 190
-    for driver in drivers:
-        draw.text((100, y), driver, fill=(245, 247, 250), font=load_font(38))
-        y += 105
-    scenes.append(np.asarray(image))
-
-    image = Image.new("RGB", (width, height), (11, 18, 32))
-    draw = ImageDraw.Draw(image)
     draw.text((70, 55), "Market Snapshot Recap", fill=(245, 247, 250), font=load_font(58))
-    y = 185
+    y = 175
     for market in valid_markets:
         sign = "+" if market["percent"] >= 0 else ""
         color = (55, 163, 27) if market["percent"] >= 0 else (255, 51, 43)
-        draw.text((90, y), f"{market['name']}: {sign}{market['percent']:.2f}%", fill=color, font=load_font(44))
-        y += 105
-    draw.text((70, 645), "Informational purposes only â¢ Not financial advice", fill=(170, 180, 197), font=load_font(24))
+        draw.text((90, y), f"{market['name']}: {sign}{market['percent']:.2f}%", fill=color, font=load_font(40))
+        y += 92
+    if strongest_sectors:
+        draw.text((90, 500), f"Top sector: {strongest_sectors[0]['name']}",
+                  fill=(245, 247, 250), font=load_font(34))
+    draw.text((70, 645), "Informational purposes only â¢ Not financial advice",
+              fill=(170, 180, 197), font=load_font(24))
     scenes.append(np.asarray(image))
 
     silent_path = (
@@ -284,20 +361,14 @@ def make_market_video(report_type, markets):
     finally:
         writer.close()
 
-    # Narration is best-effort: if online TTS fails, the bot still uploads the silent video.
     try:
         voice = os.environ.get("TTS_VOICE", "en-US-GuyNeural")
-        edge_tts.Communicate(
-            narration,
-            voice=voice,
-            rate="+2%",
-        ).save_sync(str(audio_path))
+        edge_tts.Communicate(narration, voice=voice, rate="+2%").save_sync(str(audio_path))
 
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
         subprocess.run(
             [
-                ffmpeg,
-                "-y",
+                ffmpeg, "-y",
                 "-i", str(silent_path),
                 "-i", str(audio_path),
                 "-c:v", "copy",
