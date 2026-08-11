@@ -204,7 +204,7 @@ def load_font(size):
 
 
 def make_market_video(report_type, markets):
-    width, height, fps = 1280, 720, 24
+    width, height, fps = 1280, 720, 8
     scene_seconds = 24
     sectors = get_sector_data()
     news_stories = get_market_news(limit=5)
@@ -474,7 +474,7 @@ def make_market_video(report_type, markets):
         silent_path,
         fps=fps,
         codec="libx264",
-        quality=8,
+        quality=6,
         macro_block_size=None,
     )
 
