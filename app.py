@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tempfile
+import textwrap
 from datetime import datetime
 from pathlib import Path
 
@@ -103,6 +104,65 @@ def get_sector_data():
     return sectors
 
 
+def get_market_news(limit=5):
+    """Fetch a small set of current market headlines from yfinance Search."""
+    stories = []
+    seen = set()
+    queries = ["stock market", "S&P 500", "Nasdaq"]
+
+    for query in queries:
+        if len(stories) >= limit:
+            break
+        try:
+            results = yf.Search(
+                query,
+                max_results=0,
+                news_count=limit,
+                lists_count=0,
+                include_cb=False,
+                include_nav_links=False,
+                include_research=False,
+                raise_errors=False,
+            ).news or []
+
+            for item in results:
+                if not isinstance(item, dict):
+                    continue
+
+                content = item.get("content", item)
+                if not isinstance(content, dict):
+                    continue
+
+                title = content.get("title") or content.get("headline") or item.get("title")
+                provider = content.get("provider", {})
+                publisher = (
+                    provider.get("displayName")
+                    if isinstance(provider, dict)
+                    else None
+                ) or content.get("publisher") or item.get("publisher") or "Market news"
+
+                if not title:
+                    continue
+
+                title = " ".join(str(title).split())
+                key = title.lower()
+                if key in seen:
+                    continue
+
+                seen.add(key)
+                stories.append({
+                    "title": title,
+                    "publisher": str(publisher),
+                })
+
+                if len(stories) >= limit:
+                    break
+        except Exception as exc:
+            print(f"Market news query failed for {query}: {exc}")
+
+    return stories
+
+
 def client_config():
     client_id = os.environ.get("YOUTUBE_CLIENT_ID")
     client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
@@ -147,6 +207,7 @@ def make_market_video(report_type, markets):
     width, height, fps = 1280, 720, 24
     scene_seconds = 24
     sectors = get_sector_data()
+    news_stories = get_market_news(limit=5)
 
     valid_markets = [m for m in markets if "error" not in m]
     valid_sectors = [s for s in sectors if "error" not in s]
@@ -209,6 +270,23 @@ def make_market_video(report_type, markets):
             + "."
         )
 
+    if news_stories:
+        news_narration = (
+            "Here are several market headlines on the radar. "
+            + " ".join(
+                f"Headline {i + 1}: {story['title']}. Source: {story['publisher']}."
+                for i, story in enumerate(news_stories)
+            )
+            + " These headlines are presented as a news watchlist. "
+            "A headline by itself does not establish the cause of a market move, so watch the underlying reporting "
+            "and the market reaction as the session develops. "
+        )
+    else:
+        news_narration = (
+            "Current market headlines were temporarily unavailable, so this report will stay focused "
+            "on verified price and sector data. "
+        )
+
     narration = (
         f"Welcome to the Mr. Christian Daily Market Update for "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
@@ -217,6 +295,7 @@ def make_market_video(report_type, markets):
         f"{index_sentences} {tone_sentence} {leader_sentence} "
         f"Now let's look beneath the surface at sector performance. "
         f"{sector_leader_sentence} {sector_laggard_sentence} "
+        f"{news_narration} "
         f"Sector leadership matters because it shows where investors are concentrating buying pressure "
         f"and where selling pressure is strongest. "
         f"A market can look healthy at the index level while only a few sectors are doing the heavy lifting. "
@@ -228,7 +307,7 @@ def make_market_video(report_type, markets):
         f"Investors should continue to monitor earnings reports, economic releases, interest-rate expectations, "
         f"and company-specific headlines that can change momentum during the session. "
         f"For this {report_type.lower()} update, the overall market tone is {tone}. "
-        f"We will keep focusing on direction, leadership, breadth, momentum, and sector rotation. "
+        f"We will keep focusing on direction, leadership, breadth, momentum, sector rotation, and the day's top stories. "
         f"This report is for informational purposes only and is not financial advice. "
         f"This is Mr. Christian with your Daily Market Update."
     )
@@ -306,6 +385,52 @@ def make_market_video(report_type, markets):
                   font=load_font(42))
         y += 120
     scenes.append(np.asarray(image))
+
+    # Market headlines
+    if news_stories:
+        for page_index in range(0, len(news_stories), 3):
+            page_stories = news_stories[page_index:page_index + 3]
+            image = Image.new("RGB", (width, height), (11, 18, 32))
+            draw = ImageDraw.Draw(image)
+            draw.text((70, 55), "Top Market Stories", fill=(245, 247, 250), font=load_font(58))
+            y = 150
+
+            for story_index, story in enumerate(page_stories, start=page_index + 1):
+                draw.text(
+                    (80, y),
+                    f"{story_index}. {story['publisher']}",
+                    fill=(170, 180, 197),
+                    font=load_font(26),
+                )
+                y += 45
+
+                wrapped = textwrap.wrap(story["title"], width=54)[:3]
+                for line in wrapped:
+                    draw.text(
+                        (100, y),
+                        line,
+                        fill=(245, 247, 250),
+                        font=load_font(30),
+                    )
+                    y += 42
+                y += 42
+
+            draw.text(
+                (70, 655),
+                "Headlines only â¢ Verify full reporting before drawing conclusions",
+                fill=(170, 180, 197),
+                font=load_font(21),
+            )
+            scenes.append(np.asarray(image))
+    else:
+        image = Image.new("RGB", (width, height), (11, 18, 32))
+        draw = ImageDraw.Draw(image)
+        draw.text((70, 55), "Top Market Stories", fill=(245, 247, 250), font=load_font(58))
+        draw.text((90, 260), "Headlines temporarily unavailable",
+                  fill=(245, 247, 250), font=load_font(40))
+        draw.text((90, 330), "Continuing with verified market data",
+                  fill=(170, 180, 197), font=load_font(30))
+        scenes.append(np.asarray(image))
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
