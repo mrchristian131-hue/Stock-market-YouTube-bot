@@ -268,8 +268,8 @@ def load_font(size):
 
 
 def make_market_video(report_type, markets):
-    width, height, fps = 1280, 720, 8
-    scene_seconds = 24
+    width, height, fps = 1280, 720, 6
+    scene_seconds = 32
     sectors = get_sector_data()
     news_stories = get_market_news(limit=5)
     top_gainers, top_laggards = get_stock_movers()
@@ -337,25 +337,24 @@ def make_market_video(report_type, markets):
 
     if news_stories:
         news_narration = (
-            "Here are several market headlines on the radar. "
+            "Now let's turn to the top market stories on the radar. "
             + " ".join(
-                f"Headline {i + 1}: {story['title']}. Source: {story['publisher']}."
+                f"Story {i + 1}: {story['title']}. Source: {story['publisher']}."
                 for i, story in enumerate(news_stories)
             )
-            + " These headlines are presented as a news watchlist. "
-            "A headline by itself does not establish the cause of a market move, so watch the underlying reporting "
-            "and the market reaction as the session develops. "
+            + " These headlines are a watchlist, not a claim that any single headline caused today's market move. "
+            "What matters is how investors respond as the full reporting is digested and prices adjust. "
         )
     else:
         news_narration = (
-            "Current market headlines were temporarily unavailable, so this report will stay focused "
-            "on verified price and sector data. "
+            "Current market headlines are temporarily unavailable, so this report will stay focused "
+            "on verified index, sector, and stock-price data. "
         )
 
     if top_gainers:
         mover_narration = (
-            "Now for a large-cap stock mover check. "
-            "Among our liquid watchlist, the strongest names include "
+            "Now for the large-cap mover check. "
+            "Among our selected liquid watchlist, the strongest names include "
             + ", ".join(
                 f"{m['name']}, ticker {m['symbol']}, at {'+' if m['percent'] >= 0 else ''}{m['percent']:.2f} percent"
                 for m in top_gainers
@@ -364,7 +363,7 @@ def make_market_video(report_type, markets):
         )
         if top_laggards:
             mover_narration += (
-                "The weakest names in the same watchlist include "
+                "On the weaker side of the same watchlist, the laggards include "
                 + ", ".join(
                     f"{m['name']}, ticker {m['symbol']}, at {'+' if m['percent'] >= 0 else ''}{m['percent']:.2f} percent"
                     for m in top_laggards
@@ -372,8 +371,9 @@ def make_market_video(report_type, markets):
                 + ". "
             )
         mover_narration += (
-            "These are watchlist movers, not a ranking of every stock in the market, "
-            "but they can help show where large-cap momentum is strongest and weakest. "
+            "These names are not a ranking of every stock in the market. "
+            "They are a focused large-cap check designed to show where momentum is strongest and weakest "
+            "inside a group of widely followed companies. "
         )
     else:
         mover_narration = (
@@ -384,25 +384,74 @@ def make_market_video(report_type, markets):
         f"Welcome to the Mr. Christian Daily Market Update for "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
         f"This is the stock market {report_type.lower()} report. "
-        f"We begin with the major United States stock indexes. "
+        f"We are going to break the session down into four parts: the major indexes, sector leadership, "
+        f"the day's top stories, and the large-cap names showing the most momentum. "
+
+        f"First, the major United States stock indexes. "
         f"{index_sentences} {tone_sentence} {leader_sentence} "
+        f"That gives us the headline direction, but the index numbers are only the first layer of the story. "
+        f"The next question is whether the move is broad, whether leadership is concentrated, "
+        f"and whether the strongest part of the market is holding its position as the session develops. "
+
         f"Now let's look beneath the surface at sector performance. "
         f"{sector_leader_sentence} {sector_laggard_sentence} "
+        f"Sector rotation can tell us a lot about market character. "
+        f"When several economically important groups are moving in the same direction, that can point to broader participation. "
+        f"When only one or two groups are carrying the market, the major averages may look stronger than the underlying breadth. "
+        f"That is why sector leadership matters: it helps separate a broad-based move from a narrow one. "
+
+        f"Technology leadership can influence the Nasdaq and the S and P 500 because large technology companies carry significant weight. "
+        f"Financials can offer clues about expectations for growth, credit conditions, and interest rates. "
+        f"Energy can react to changes in oil prices and global demand expectations. "
+        f"Consumer groups can help show whether investors are favoring discretionary spending or more defensive areas. "
+        f"Health care, utilities, and consumer staples can sometimes attract attention when traders become more defensive. "
+        f"Those relationships are not guarantees, but they are useful context when reading the market. "
+
         f"{news_narration} "
+        f"The important thing with headlines is to separate the fact of the headline from the market's reaction to it. "
+        f"A major story can sound positive or negative and still produce a different price response than expected. "
+        f"That is why we watch both the news and the tape. "
+        f"If a headline is truly important to the broader market, we often see confirmation through index direction, sector movement, "
+        f"volume, or a cluster of related stocks moving together. "
+
         f"{mover_narration} "
-        f"Sector leadership matters because it shows where investors are concentrating buying pressure "
-        f"and where selling pressure is strongest. "
-        f"A market can look healthy at the index level while only a few sectors are doing the heavy lifting. "
-        f"Broad participation across technology, financials, industrials, consumer groups, health care, energy, "
-        f"and other sectors can support a stronger overall tone. "
-        f"What matters next is whether the opening direction can hold as trading volume builds. "
-        f"Watch the relationship between the Dow Jones, the S and P 500, and the Nasdaq. "
-        f"Also watch whether today's strongest sectors keep their leadership or begin to fade. "
-        f"Investors should continue to monitor earnings reports, economic releases, interest-rate expectations, "
-        f"and company-specific headlines that can change momentum during the session. "
+        f"Large-cap movers are useful because they can reveal where investors are making stronger individual-company decisions. "
+        f"A stock that is outperforming while its sector is also strong may be participating in a broader theme. "
+        f"A stock that is moving sharply against its sector may be reacting to company-specific information instead. "
+        f"That distinction helps us avoid treating every stock move as a market-wide signal. "
+
+        f"From here, the key question is whether today's direction holds. "
+        f"For an opening report, early moves can change quickly as more volume enters the market and new information is priced in. "
+        f"For a closing report, the final hour can still change the character of the session as institutions rebalance positions "
+        f"and traders reduce risk before the bell. "
+        f"In either case, we want to know whether the strongest indexes stay strong, whether the weakest indexes recover, "
+        f"and whether sector leadership broadens or narrows. "
+
+        f"We also want to watch momentum. "
+        f"If the market is positive but leadership begins to fade, that can signal that buyers are becoming less aggressive. "
+        f"If the market is weak but lagging groups begin to stabilize, that can be an early sign that selling pressure is easing. "
+        f"Those are observations, not predictions. "
+        f"The goal is to read what the market is doing now instead of forcing a forecast onto the data. "
+
+        f"Another point to watch is confirmation between the indexes. "
+        f"If the Dow Jones, the S and P 500, and the Nasdaq are moving in the same direction, the message is usually clearer. "
+        f"If they are split, the market may be dealing with rotation, differences in sector exposure, or concentrated leadership. "
+        f"That is when the sector board and the large-cap movers become especially useful. "
+
         f"For this {report_type.lower()} update, the overall market tone is {tone}. "
-        f"We will keep focusing on direction, leadership, breadth, momentum, sector rotation, and the day's top stories. "
+        f"The strongest and weakest indexes, the leading and lagging sectors, the current headlines, "
+        f"and the large-cap movers together give us a more complete picture than any single number. "
+
+        f"Before we wrap up, here is the checklist for the rest of the session. "
+        f"Watch whether the major indexes confirm one another. "
+        f"Watch whether the leading sectors maintain their strength. "
+        f"Watch whether lagging sectors stabilize or weaken further. "
+        f"Watch whether the strongest large-cap names continue to attract buyers. "
+        f"And watch for new economic, earnings, policy, or company headlines that could change momentum. "
+
+        f"We will keep focusing on direction, breadth, sector rotation, momentum, and the market's reaction to new information. "
         f"This report is for informational purposes only and is not financial advice. "
+        f"Always do your own research and make decisions based on your own objectives and risk tolerance. "
         f"This is Mr. Christian with your Daily Market Update."
     )
 
@@ -592,6 +641,22 @@ def make_market_video(report_type, markets):
     for item in items:
         draw.text((90, y), item, fill=(245, 247, 250), font=load_font(34))
         y += 105
+    scenes.append(np.asarray(image))
+
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 55), "Session Checklist", fill=(245, 247, 250), font=load_font(58))
+    checklist_items = [
+        "Major indexes confirming?",
+        "Sector leadership holding?",
+        "Market breadth improving?",
+        "Large-cap momentum continuing?",
+        "New headlines changing the tape?",
+    ]
+    y = 165
+    for item in checklist_items:
+        draw.text((95, y), f"â¢ {item}", fill=(245, 247, 250), font=load_font(34))
+        y += 92
     scenes.append(np.asarray(image))
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
