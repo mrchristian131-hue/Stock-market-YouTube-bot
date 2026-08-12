@@ -269,7 +269,7 @@ def load_font(size):
 
 def make_market_video(report_type, markets):
     width, height, fps = 1280, 720, 6
-    scene_seconds = 32
+    scene_seconds = 42
     sectors = get_sector_data()
     news_stories = get_market_news(limit=5)
     top_gainers, top_laggards = get_stock_movers()
@@ -335,6 +335,42 @@ def make_market_video(report_type, markets):
             + "."
         )
 
+    # Decide how much attention today's market deserves.
+    index_move = max((abs(m["percent"]) for m in valid_markets), default=0)
+    sector_move = max((abs(s["percent"]) for s in valid_sectors), default=0)
+    mover_move = max(
+        [abs(m["percent"]) for m in (top_gainers + top_laggards)],
+        default=0,
+    )
+
+    activity_score = 0
+    if index_move >= 1.0:
+        activity_score += 2
+    elif index_move >= 0.5:
+        activity_score += 1
+
+    if sector_move >= 1.5:
+        activity_score += 2
+    elif sector_move >= 0.75:
+        activity_score += 1
+
+    if mover_move >= 4.0:
+        activity_score += 2
+    elif mover_move >= 2.0:
+        activity_score += 1
+
+    if len(news_stories) >= 5:
+        activity_score += 2
+    elif len(news_stories) >= 3:
+        activity_score += 1
+
+    if activity_score >= 6:
+        day_type = "high activity"
+    elif activity_score >= 3:
+        day_type = "active"
+    else:
+        day_type = "quiet"
+
     if news_stories:
         news_narration = (
             "Now let's turn to the top market stories on the radar. "
@@ -343,7 +379,7 @@ def make_market_video(report_type, markets):
                 for i, story in enumerate(news_stories)
             )
             + " These headlines are a watchlist, not a claim that any single headline caused today's market move. "
-            "What matters is how investors respond as the full reporting is digested and prices adjust. "
+            "The key is how investors respond as the underlying reporting is digested and prices adjust. "
         )
     else:
         news_narration = (
@@ -371,72 +407,95 @@ def make_market_video(report_type, markets):
                 + ". "
             )
         mover_narration += (
-            "These names are not a ranking of every stock in the market. "
-            "They are a focused large-cap check designed to show where momentum is strongest and weakest "
-            "inside a group of widely followed companies. "
+            "These are selected large-cap names, not a ranking of every stock in the market. "
+            "They are useful for seeing where momentum is concentrated inside a group of widely followed companies. "
         )
     else:
         mover_narration = (
             "Large-cap mover data is temporarily unavailable, so we will continue with index, sector, and headline data. "
         )
 
+    if day_type == "high activity":
+        dynamic_middle = (
+            "Today qualifies as a high-activity session based on the size of the moves across indexes, sectors, "
+            "large-cap stocks, and the amount of headline flow. "
+            "On a day like this, the relationships between these pieces matter more than any single number. "
+            "Strong index movement backed by broad sector participation can carry more weight than a move driven by only one group. "
+            "If the largest stock movers line up with the strongest sectors, that can reinforce the idea that leadership is broadening. "
+            "If they diverge, company-specific news or narrow positioning may be doing more of the work. "
+            "This is also the kind of session where momentum can change quickly, so watch whether early leaders keep attracting buyers "
+            "and whether weak groups continue to make new lows or begin to stabilize. "
+            "Volume, breadth, and confirmation between the major indexes become especially important when the tape is moving fast. "
+        )
+        dynamic_close = (
+            "Because today's activity level is elevated, this is a session where it makes sense to stay alert for follow-through, "
+            "reversals, and new headline catalysts. "
+            "If the market keeps confirming the same message across indexes, sectors, and large-cap leaders, the trend is clearer. "
+            "If those signals begin to split apart, the character of the session may be changing. "
+        )
+    elif day_type == "active":
+        dynamic_middle = (
+            "Today looks like an active but not extreme session. "
+            "There is enough movement to make leadership and rotation worth watching closely. "
+            "The most useful question is whether the strongest areas can hold their advantage as the session develops. "
+            "If sector leaders stay firm while the major indexes remain aligned, the market message is more consistent. "
+            "If leadership rotates quickly from one group to another, the tape may be more tactical and less directional. "
+        )
+        dynamic_close = (
+            "With a moderate level of activity, the focus stays on confirmation. "
+            "We want to see whether the current leaders remain in control or whether the market settles into a more mixed pattern. "
+        )
+    else:
+        dynamic_middle = (
+            "Today is shaping up as a quieter session. "
+            "That does not mean there is nothing to watch; it means the most useful information may come from smaller shifts in leadership "
+            "rather than dramatic index moves. "
+            "On quieter days, sector rotation and individual-stock strength can stand out more clearly because the major averages are not "
+            "dominating the story. "
+        )
+        dynamic_close = (
+            "Because today's activity is relatively quiet, there is no reason to stretch the story beyond what the data supports. "
+            "The main job is to keep an eye on whether new headlines or late-session movement change the character of the market. "
+        )
+
     narration = (
         f"Welcome to the Mr. Christian Daily Market Update for "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
         f"This is the stock market {report_type.lower()} report. "
-        f"We are going to break the session down into four parts: the major indexes, sector leadership, "
-        f"the day's top stories, and the large-cap names showing the most momentum. "
+        f"Today's market is currently classified as a {day_type} session based on price movement, sector rotation, "
+        f"large-cap movers, and headline flow. "
 
         f"First, the major United States stock indexes. "
         f"{index_sentences} {tone_sentence} {leader_sentence} "
         f"That gives us the headline direction, but the index numbers are only the first layer of the story. "
-        f"The next question is whether the move is broad, whether leadership is concentrated, "
-        f"and whether the strongest part of the market is holding its position as the session develops. "
+        f"The next question is whether the move is broad, concentrated, or beginning to rotate. "
 
         f"Now let's look beneath the surface at sector performance. "
         f"{sector_leader_sentence} {sector_laggard_sentence} "
-        f"Sector rotation can tell us a lot about market character. "
-        f"When several economically important groups are moving in the same direction, that can point to broader participation. "
-        f"When only one or two groups are carrying the market, the major averages may look stronger than the underlying breadth. "
-        f"That is why sector leadership matters: it helps separate a broad-based move from a narrow one. "
+        f"Sector rotation helps tell us whether the market's strength or weakness is being shared across several groups "
+        f"or carried by only a narrow part of the market. "
 
-        f"Technology leadership can influence the Nasdaq and the S and P 500 because large technology companies carry significant weight. "
-        f"Financials can offer clues about expectations for growth, credit conditions, and interest rates. "
-        f"Energy can react to changes in oil prices and global demand expectations. "
-        f"Consumer groups can help show whether investors are favoring discretionary spending or more defensive areas. "
-        f"Health care, utilities, and consumer staples can sometimes attract attention when traders become more defensive. "
-        f"Those relationships are not guarantees, but they are useful context when reading the market. "
+        f"{dynamic_middle} "
 
         f"{news_narration} "
         f"The important thing with headlines is to separate the fact of the headline from the market's reaction to it. "
         f"A major story can sound positive or negative and still produce a different price response than expected. "
         f"That is why we watch both the news and the tape. "
-        f"If a headline is truly important to the broader market, we often see confirmation through index direction, sector movement, "
-        f"volume, or a cluster of related stocks moving together. "
 
         f"{mover_narration} "
-        f"Large-cap movers are useful because they can reveal where investors are making stronger individual-company decisions. "
-        f"A stock that is outperforming while its sector is also strong may be participating in a broader theme. "
-        f"A stock that is moving sharply against its sector may be reacting to company-specific information instead. "
-        f"That distinction helps us avoid treating every stock move as a market-wide signal. "
+        f"Large-cap movers can show where investors are making stronger individual-company decisions. "
+        f"A stock outperforming while its sector is also strong may be participating in a broader theme. "
+        f"A stock moving sharply against its sector may be reacting to company-specific information instead. "
 
-        f"From here, the key question is whether today's direction holds. "
         f"For an opening report, early moves can change quickly as more volume enters the market and new information is priced in. "
-        f"For a closing report, the final hour can still change the character of the session as institutions rebalance positions "
+        f"For a closing report, late trading can still change the character of the session as institutions rebalance positions "
         f"and traders reduce risk before the bell. "
-        f"In either case, we want to know whether the strongest indexes stay strong, whether the weakest indexes recover, "
-        f"and whether sector leadership broadens or narrows. "
 
-        f"We also want to watch momentum. "
-        f"If the market is positive but leadership begins to fade, that can signal that buyers are becoming less aggressive. "
-        f"If the market is weak but lagging groups begin to stabilize, that can be an early sign that selling pressure is easing. "
-        f"Those are observations, not predictions. "
-        f"The goal is to read what the market is doing now instead of forcing a forecast onto the data. "
-
-        f"Another point to watch is confirmation between the indexes. "
+        f"We also want to watch confirmation between the indexes. "
         f"If the Dow Jones, the S and P 500, and the Nasdaq are moving in the same direction, the message is usually clearer. "
         f"If they are split, the market may be dealing with rotation, differences in sector exposure, or concentrated leadership. "
-        f"That is when the sector board and the large-cap movers become especially useful. "
+
+        f"{dynamic_close} "
 
         f"For this {report_type.lower()} update, the overall market tone is {tone}. "
         f"The strongest and weakest indexes, the leading and lagging sectors, the current headlines, "
@@ -646,6 +705,7 @@ def make_market_video(report_type, markets):
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 55), "Session Checklist", fill=(245, 247, 250), font=load_font(58))
+    draw.text((70, 120), f"Session type: {day_type.title()}", fill=(170, 180, 197), font=load_font(27))
     checklist_items = [
         "Major indexes confirming?",
         "Sector leadership holding?",
@@ -653,7 +713,7 @@ def make_market_video(report_type, markets):
         "Large-cap momentum continuing?",
         "New headlines changing the tape?",
     ]
-    y = 165
+    y = 190
     for item in checklist_items:
         draw.text((95, y), f"â¢ {item}", fill=(245, 247, 250), font=load_font(34))
         y += 92
