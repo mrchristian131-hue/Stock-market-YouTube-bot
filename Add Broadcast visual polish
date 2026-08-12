@@ -535,9 +535,11 @@ def make_market_video(report_type, markets):
     draw = ImageDraw.Draw(image)
     draw.text((70, 70), "Mr. Christian", fill=(245, 247, 250), font=load_font(72))
     draw.text((70, 175), "Daily Market Update", fill=(170, 180, 197), font=load_font(48))
+    draw.rectangle((70, 245, 390, 253), fill=(39, 104, 189))
     draw.text((70, 285), f"Stock Market {report_type.title()}", fill=(245, 247, 250), font=load_font(54))
     draw.text((70, 365), datetime.now().strftime("%A, %B %d, %Y"), fill=(170, 180, 197), font=load_font(34))
-    draw.text((70, 610), "Narrated private preview", fill=(170, 180, 197), font=load_font(26))
+    draw.text((70, 565), f"Session: {day_type.title()}", fill=(245, 247, 250), font=load_font(30))
+    draw.text((70, 610), "Narrated private preview", fill=(170, 180, 197), font=load_font(24))
     scenes.append(np.asarray(image))
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
@@ -734,6 +736,56 @@ def make_market_video(report_type, markets):
     draw.text((70, 645), "Informational purposes only â¢ Not financial advice",
               fill=(170, 180, 197), font=load_font(24))
     scenes.append(np.asarray(image))
+
+    # Closing card
+    image = Image.new("RGB", (width, height), (11, 18, 32))
+    draw = ImageDraw.Draw(image)
+    draw.text((70, 115), "Mr. Christian", fill=(245, 247, 250), font=load_font(72))
+    draw.text((70, 225), "Daily Market Update", fill=(170, 180, 197), font=load_font(46))
+    draw.rectangle((70, 300, 430, 308), fill=(39, 104, 189))
+    draw.text((70, 360), "Direction â¢ Breadth â¢ Rotation â¢ Momentum", fill=(245, 247, 250), font=load_font(34))
+    draw.text((70, 455), "Thanks for watching.", fill=(245, 247, 250), font=load_font(38))
+    draw.text((70, 520), "Informational purposes only â¢ Not financial advice", fill=(170, 180, 197), font=load_font(24))
+    scenes.append(np.asarray(image))
+
+    # Broadcast polish: add consistent original branding to every scene.
+    polished_scenes = []
+    for scene_index, scene in enumerate(scenes, start=1):
+        frame = Image.fromarray(scene).convert("RGB")
+        frame_draw = ImageDraw.Draw(frame)
+
+        # Top accent rail
+        frame_draw.rectangle((0, 0, width, 10), fill=(39, 104, 189))
+
+        # Small upper-right show label
+        show_label = "MR. CHRISTIAN  â¢  DAILY MARKET UPDATE"
+        frame_draw.text(
+            (735, 24),
+            show_label,
+            fill=(170, 180, 197),
+            font=load_font(20),
+        )
+
+        # Lower information rail
+        frame_draw.rectangle((0, height - 46, width, height), fill=(7, 12, 22))
+        frame_draw.text(
+            (28, height - 35),
+            f"{report_type.upper()}  â¢  {datetime.now().strftime('%b %d, %Y')}  â¢  PRIVATE PREVIEW",
+            fill=(170, 180, 197),
+            font=load_font(19),
+        )
+
+        # Scene counter gives the show a cleaner broadcast rhythm.
+        frame_draw.text(
+            (1110, height - 35),
+            f"{scene_index:02d}/{len(scenes):02d}",
+            fill=(170, 180, 197),
+            font=load_font(19),
+        )
+
+        polished_scenes.append(np.asarray(frame))
+
+    scenes = polished_scenes
 
     silent_path = (
         Path(tempfile.gettempdir())
