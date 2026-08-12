@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tempfile
+import threading
 import textwrap
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,16 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-in-railway")
+
+JOB_LOCK = threading.Lock()
+JOB_STATUS = {
+    "running": False,
+    "report_type": None,
+    "message": "No video job is running.",
+    "video_id": None,
+}
+
+
 
 MARKETS = {"S&P 500": "^GSPC", "Dow Jones": "^DJI", "Nasdaq": "^IXIC"}
 YOUTUBE_SCOPE = [
@@ -898,7 +909,7 @@ body{background:#0b1220;color:white;font-family:Arial,sans-serif;margin:0;paddin
 </style></head><body><div class="dashboard"><h1>Stock Market YouTube Bot</h1><p>Latest available market data</p>
 <table><tr><th>Index</th><th>Price</th><th>Change</th><th>Percent</th></tr>
 {% for market in markets %}{% if market.error %}<tr><td>{{ market.name }}</td><td colspan="3">{{ market.error }}</td></tr>{% else %}<tr><td>{{ market.name }}</td><td>{{ "{:,.2f}".format(market.price) }}</td><td style="color:{{ market.color }}">{{ "{:+,.2f}".format(market.change) }}</td><td style="color:{{ market.color }}">{{ "{:+.2f}%".format(market.percent) }}</td></tr>{% endif %}{% endfor %}
-</table><div class="buttons"><a class="button" href="/authorize">Connect YouTube</a><a class="button secondary" href="/youtube/status">Check YouTube</a><a class="button secondary" href="/run/open">Upload Private Open Video</a><a class="button secondary" href="/run/close">Upload Private Close Video</a></div><div class="notice">Videos are uploaded as <strong>Private</strong>. The open and close routes are manual test buttons until scheduling is configured.</div></div></body></html>'''
+</table><div class="buttons"><a class="button" href="/authorize">Connect YouTube</a><a class="button secondary" href="/youtube/status">Check YouTube</a><a class="button secondary" href="/run/open">Upload Private Open Video</a><a class="button secondary" href="/run/close">Upload Private Close Video</a><a class="button secondary" href="/job/status">Video Job Status</a></div><div class="notice">Videos are uploaded as <strong>Private</strong>. Open and close videos now run as background jobs, so you can leave the page while Railway renders and uploads them.</div></div></body></html>'''
 
 
 @app.route("/")
@@ -947,31 +958,125 @@ def youtube_status():
         return f"<h2>YouTube connection problem</h2><pre>{exc}</pre>", 500
 
 
-def run_private_upload(report_type):
-    cron_secret = os.environ.get("CRON_SECRET")
-    if cron_secret and request.args.get("key") != cron_secret:
-        return "Unauthorized", 401
+def background_private_upload(report_type):
     video_path = None
     try:
+        with JOB_LOCK:
+            JOB_STATUS["running"] = True
+            JOB_STATUS["report_type"] = report_type
+            JOB_STATUS["message"] = f"Generating private {report_type.lower()} video..."
+            JOB_STATUS["video_id"] = None
+
+        print(f"Background {report_type} video job started.", flush=True)
+
         markets = get_market_data()
+
+        with JOB_LOCK:
+            JOB_STATUS["message"] = f"Rendering private {report_type.lower()} video..."
+
         video_path = make_market_video(report_type, markets)
+
+        with JOB_LOCK:
+            JOB_STATUS["message"] = f"Uploading private {report_type.lower()} video to YouTube..."
+
         response = upload_video(video_path, report_type, markets)
-        return f"<h2>Private {report_type} video uploaded</h2><p>YouTube video ID: {response['id']}</p><p><a href='/'>Return to dashboard</a></p>"
+        video_id = response.get("id")
+
+        with JOB_LOCK:
+            JOB_STATUS["running"] = False
+            JOB_STATUS["message"] = f"Private {report_type.lower()} video uploaded successfully."
+            JOB_STATUS["video_id"] = video_id
+
+        print(f"Background {report_type} video uploaded: {video_id}", flush=True)
+
     except Exception as exc:
-        return f"<h2>Upload failed</h2><pre>{exc}</pre>", 500
+        print(f"Background {report_type} upload failed: {type(exc).__name__}: {exc}", flush=True)
+        with JOB_LOCK:
+            JOB_STATUS["running"] = False
+            JOB_STATUS["message"] = f"{report_type} upload failed: {type(exc).__name__}: {exc}"
+            JOB_STATUS["video_id"] = None
+
     finally:
         if video_path and video_path.exists():
             video_path.unlink(missing_ok=True)
 
 
+def start_private_upload(report_type):
+    cron_secret = os.environ.get("CRON_SECRET")
+    if cron_secret and request.args.get("key") != cron_secret:
+        return "Unauthorized", 401
+
+    with JOB_LOCK:
+        if JOB_STATUS["running"]:
+            current = JOB_STATUS["report_type"] or "market"
+            return (
+                f"<h2>A video job is already running</h2>"
+                f"<p>The private {current.lower()} video is still being generated/uploaded.</p>"
+                f"<p><a href='/job/status'>Check job status</a></p>"
+                f"<p><a href='/'>Return to dashboard</a></p>",
+                409,
+            )
+
+        JOB_STATUS["running"] = True
+        JOB_STATUS["report_type"] = report_type
+        JOB_STATUS["message"] = f"Starting private {report_type.lower()} video..."
+        JOB_STATUS["video_id"] = None
+
+    worker = threading.Thread(
+        target=background_private_upload,
+        args=(report_type,),
+        daemon=True,
+        name=f"{report_type.lower()}-video-job",
+    )
+    worker.start()
+
+    return (
+        f"<html><head><meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<style>body{{font-family:Arial;padding:24px;background:#0b1220;color:white}}"
+        f"a{{color:#60a5fa}}</style></head><body>"
+        f"<h2>Private {report_type} video started</h2>"
+        f"<p>You can leave this page. Railway will keep generating and uploading the video in the background.</p>"
+        f"<p><a href='/job/status'>Check job status</a></p>"
+        f"<p><a href='/'>Return to dashboard</a></p>"
+        f"</body></html>"
+    )
+
+
+@app.route("/job/status")
+def job_status():
+    with JOB_LOCK:
+        running = JOB_STATUS["running"]
+        report_type = JOB_STATUS["report_type"]
+        message = JOB_STATUS["message"]
+        video_id = JOB_STATUS["video_id"]
+
+    status_text = "Running" if running else "Idle"
+    video_line = f"<p>YouTube video ID: {video_id}</p>" if video_id else ""
+
+    return (
+        "<html><head><meta name='viewport' content='width=device-width, initial-scale=1'>"
+        "<meta http-equiv='refresh' content='10'>"
+        "<style>body{font-family:Arial;padding:24px;background:#0b1220;color:white}"
+        "a{color:#60a5fa}.card{background:#111827;padding:20px;border-radius:14px;max-width:700px}</style>"
+        "</head><body><div class='card'>"
+        f"<h2>Video Job Status: {status_text}</h2>"
+        f"<p>{message}</p>"
+        f"<p>Report type: {report_type or 'None'}</p>"
+        f"{video_line}"
+        "<p>This page refreshes every 10 seconds.</p>"
+        "<p><a href='/'>Return to dashboard</a></p>"
+        "</div></body></html>"
+    )
+
+
 @app.route("/run/open")
 def run_open():
-    return run_private_upload("Open")
+    return start_private_upload("Open")
 
 
 @app.route("/run/close")
 def run_close():
-    return run_private_upload("Close")
+    return start_private_upload("Close")
 
 
 if __name__ == "__main__":
