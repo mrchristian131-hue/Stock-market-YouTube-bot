@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import tempfile
 import threading
 import textwrap
@@ -10,6 +11,7 @@ import edge_tts
 import imageio.v2 as imageio
 import imageio_ffmpeg
 import numpy as np
+import pandas_market_calendars as mcal
 import yfinance as yf
 from flask import Flask, redirect, render_template_string, request, session
 from google.auth.transport.requests import Request
@@ -958,6 +960,21 @@ def youtube_status():
         return f"<h2>YouTube connection problem</h2><pre>{exc}</pre>", 500
 
 
+def is_nyse_trading_day():
+    today = datetime.now().date()
+    nyse = mcal.get_calendar("NYSE")
+    schedule = nyse.schedule(start_date=today.isoformat(), end_date=today.isoformat())
+    return not schedule.empty
+
+
+def run_scheduled_upload(report_type):
+    if not is_nyse_trading_day():
+        print(f"NYSE is closed today. Skipping scheduled {report_type.lower()} video.", flush=True)
+        return
+
+    print(f"Starting scheduled private {report_type.lower()} video.", flush=True)
+    background_private_upload(report_type)
+
 def background_private_upload(report_type):
     video_path = None
     try:
@@ -1080,4 +1097,7 @@ def run_close():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")))
+    if len(sys.argv) > 1 and sys.argv[1] in {"cron-open", "cron-close"}:
+        run_scheduled_upload("Open" if sys.argv[1] == "cron-open" else "Close")
+    else:
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")))
