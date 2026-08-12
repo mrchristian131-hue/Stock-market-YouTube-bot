@@ -458,6 +458,38 @@ def make_market_video(report_type, markets):
             "The main job is to keep an eye on whether new headlines or late-session movement change the character of the market. "
         )
 
+    if report_type.lower() == "close":
+        session_context = (
+            "Now that the regular session is wrapping up, the focus shifts from early direction to what actually held into the close. "
+            "The closing tape can tell us whether buyers or sellers maintained control, whether sector leadership survived the full session, "
+            "and whether late-day trading confirmed or challenged the story we saw earlier. "
+        )
+        timing_context = (
+            "For a closing report, the final hour matters because institutions rebalance positions, traders reduce risk, "
+            "and late headlines can change the character of the day. "
+            "The key question is whether the strongest indexes and sectors finished near their highs, faded into the bell, "
+            "or reversed from earlier weakness. "
+        )
+        wrap_context = (
+            "Looking ahead to the next session, the main things to carry forward are today's strongest and weakest areas, "
+            "whether leadership broadened or narrowed, and whether any late-day headlines could affect the next opening. "
+        )
+    else:
+        session_context = (
+            "With the session getting underway, the focus is on whether the early direction can hold as volume builds "
+            "and new information is priced into the market. "
+            "The opening tape can change quickly, so we want to see whether index direction is confirmed by sector leadership "
+            "and large-cap momentum. "
+        )
+        timing_context = (
+            "For an opening report, early moves can change quickly as more volume enters the market and new information is priced in. "
+            "The key question is whether the strongest indexes and sectors keep their advantage or whether the tape rotates as the morning develops. "
+        )
+        wrap_context = (
+            "For the rest of the session, watch whether the major indexes confirm one another, whether sector leadership holds, "
+            "and whether new headlines change the tone before the closing bell. "
+        )
+
     narration = (
         f"Welcome to the Mr. Christian Daily Market Update for "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
@@ -487,9 +519,8 @@ def make_market_video(report_type, markets):
         f"A stock outperforming while its sector is also strong may be participating in a broader theme. "
         f"A stock moving sharply against its sector may be reacting to company-specific information instead. "
 
-        f"For an opening report, early moves can change quickly as more volume enters the market and new information is priced in. "
-        f"For a closing report, late trading can still change the character of the session as institutions rebalance positions "
-        f"and traders reduce risk before the bell. "
+        f"{session_context} "
+        f"{timing_context} "
 
         f"We also want to watch confirmation between the indexes. "
         f"If the Dow Jones, the S and P 500, and the Nasdaq are moving in the same direction, the message is usually clearer. "
@@ -501,7 +532,8 @@ def make_market_video(report_type, markets):
         f"The strongest and weakest indexes, the leading and lagging sectors, the current headlines, "
         f"and the large-cap movers together give us a more complete picture than any single number. "
 
-        f"Before we wrap up, here is the checklist for the rest of the session. "
+        f"Before we wrap up, here is the key takeaway. "
+        f"{wrap_context} "
         f"Watch whether the major indexes confirm one another. "
         f"Watch whether the leading sectors maintain their strength. "
         f"Watch whether lagging sectors stabilize or weaken further. "
@@ -706,7 +738,8 @@ def make_market_video(report_type, markets):
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Session Checklist", fill=(245, 247, 250), font=load_font(58))
+    checklist_title = "Closing Takeaways" if report_type.lower() == "close" else "Session Checklist"
+    draw.text((70, 55), checklist_title, fill=(245, 247, 250), font=load_font(58))
     draw.text((70, 120), f"Session type: {day_type.title()}", fill=(170, 180, 197), font=load_font(27))
     checklist_items = [
         "Major indexes confirming?",
