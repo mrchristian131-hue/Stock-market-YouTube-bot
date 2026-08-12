@@ -10,3 +10,4 @@ numpy
 imageio
 imageio-ffmpeg
 edge-tts==7.2.8
+pandas-market-calendars==5.4.0
