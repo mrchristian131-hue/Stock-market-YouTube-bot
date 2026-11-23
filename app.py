@@ -630,7 +630,7 @@ narration = (
         f"This is Mr. Christian with your Daily Market Update."
     )
 
-    def market_rows(draw, start_y=230, font_size=34):
+def market_rows(draw, start_y=230, font_size=34):
         y = start_y
         for market in markets:
             if "error" in market:
@@ -645,7 +645,7 @@ narration = (
                 draw.text((985, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(font_size))
             y += 100
 
-    scenes = []
+     scenes = []
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
