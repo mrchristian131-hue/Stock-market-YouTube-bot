@@ -563,7 +563,7 @@ if weather_condition == "clear":
     weather_intro = "New York City is looking bright today, so let's start on an upbeat note."
 elif weather_condition == "rainy":
     weather_intro = "It's a rainy day in New York City, so we'll keep things calm and focused on the markets."
-elif weather_condition == "thunderstorm":
+elif weather_condition == "thunderstorms":
     weather_intro = "Stormy weather is moving through New York City, so we'll take a measured approach to today's market update."
 elif weather_condition == "snowy":
     weather_intro = "It's a snowy day in New York City. Let's settle in for today's market update."
