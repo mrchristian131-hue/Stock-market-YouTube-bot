@@ -48,6 +48,57 @@ DEFAULT_BASE_URL = "https://stock-market-youtube-bot-production-42e0.up.railway.
 APP_BASE_URL = os.environ.get("APP_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
 REDIRECT_URI = f"{APP_BASE_URL}/oauth2callback"
 
+def get_nyc_weather():
+    """Get current New York City weather for the video presentation."""
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        "?latitude=40.7128&longitude=-74.0060"
+        "&current=temperature_2m,precipitation,weather_code,wind_speed_10m"
+        "&temperature_unit=fahrenheit"
+        "&timezone=America%2FNew_York"
+    )
+
+    try:
+        with urlopen(url, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+        current = data["current"]
+        code = current["weather_code"]
+
+        if code == 0:
+            condition, mood = "clear", "upbeat"
+        elif code in (1, 2, 3):
+            condition, mood = "cloudy", "calm"
+        elif code in (45, 48):
+            condition, mood = "foggy", "measured"
+        elif code in (95, 96, 99):
+            condition, mood = "thunderstorms", "serious"
+        elif code in (71, 73, 75, 77, 85, 86):
+            condition, mood = "snowy", "calm"
+        elif code in (51, 53, 55, 56, 57, 61, 63, 65,
+                      66, 67, 80, 81, 82):
+            condition, mood = "rainy", "calm"
+        else:
+            condition, mood = "mixed conditions", "neutral"
+
+        return {
+            "condition": condition,
+            "temperature_f": current["temperature_2m"],
+            "precipitation": current["precipitation"],
+            "wind_speed": current["wind_speed_10m"],
+            "mood": mood,
+        }
+
+    except Exception as exc:
+        print(f"NYC weather unavailable: {exc}")
+        return {
+            "condition": "unavailable",
+            "temperature_f": None,
+            "precipitation": None,
+            "wind_speed": None,
+            "mood": "neutral",
+        }
+
 
 def get_market_data():
     results = []
@@ -505,9 +556,26 @@ def make_market_video(report_type, markets):
             "For the rest of the session, watch whether the major indexes confirm one another, whether sector leadership holds, "
             "and whether new headlines change the tone before the closing bell. "
         )
+weather = get_nyc_weather()
+weather_condition = weather.get("condition", "unavailable")
 
+if weather_condition == "clear":
+    weather_intro = "New York City is looking bright today, so let's start on an upbeat note."
+elif weather_condition == "rainy":
+    weather_intro = "It's a rainy day in New York City, so we'll keep things calm and focused on the markets."
+elif weather_condition == "thunderstorm":
+    weather_intro = "Stormy weather is moving through New York City, so we'll take a measured approach to today's market update."
+elif weather_condition == "snowy":
+    weather_intro = "It's a snowy day in New York City. Let's settle in for today's market update."
+elif weather_condition == "foggy":
+    weather_intro = "Foggy conditions in New York City give us a reminder to look carefully at the signals in today's markets."
+elif weather_condition == "cloudy":
+    weather_intro = "It's cloudy in New York City, but we'll keep our focus clear on the latest market developments."
+else:
+    weather_intro = "Let's take a look at today's market action and the latest developments."
     narration = (
         f"Welcome to the Mr. Christian Daily Market Update for "
+        f"{weather_intro} "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
         f"This is the stock market {report_type.lower()} report. "
         f"Today's market is currently classified as a {day_type} session based on price movement, sector rotation, "
