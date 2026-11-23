@@ -573,7 +573,7 @@ elif weather_condition == "cloudy":
     weather_intro = "It's cloudy in New York City, but we'll keep our focus clear on the latest market developments."
 else:
     weather_intro = "Let's take a look at today's market action and the latest developments."
-    narration = (
+narration = (
         f"Welcome to the Mr. Christian Daily Market Update for "
         f"{weather_intro} "
         f"{datetime.now().strftime('%A, %B %d, %Y')}. "
