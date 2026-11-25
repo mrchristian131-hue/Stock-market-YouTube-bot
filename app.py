@@ -645,9 +645,9 @@ def market_rows(draw, start_y=230, font_size=34):
                 draw.text((985, y), f"{sign}{market['percent']:.2f}%", fill=value_color, font=load_font(font_size))
             y += 100
 
-     scenes = []
+scenes = []
 
-    image = Image.new("RGB", (width, height), (11, 18, 32))
+image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
     draw.text((70, 70), "Mr. Christian", fill=(245, 247, 250), font=load_font(72))
     draw.text((70, 175), "Daily Market Update", fill=(170, 180, 197), font=load_font(48))
