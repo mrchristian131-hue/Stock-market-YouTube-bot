@@ -756,14 +756,15 @@ else:
                   fill=(170, 180, 197), font=load_font(30))
         scenes.append(np.asarray(image))
 
-    # Large-cap stock movers
-    image = Image.new("RGB", (width, height), (11, 18, 32))
-    draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Large-Cap Leaders", fill=(245, 247, 250), font=load_font(58))
-    draw.text((70, 125), "Selected liquid watchlist", fill=(170, 180, 197), font=load_font(25))
-    y = 205
-    if top_gainers:
-        for mover in top_gainers:
+# Large-cap stock movers
+image = Image.new("RGB", (width, height), (11, 18, 32))
+draw = ImageDraw.Draw(image)
+draw.text((70, 55), "Large-Cap Leaders", fill=(245, 247, 250), font=load_font(58))
+draw.text((70, 125), "Selected liquid watchlist", fill=(170, 180, 197), font=load_font(25))
+y = 205
+
+if top_gainers:
+    for mover in top_gainers:
             sign = "+" if mover["percent"] >= 0 else ""
             draw.text(
                 (90, y),
@@ -778,10 +779,10 @@ else:
                 font=load_font(38),
             )
             y += 120
-    else:
+else:
         draw.text((90, 285), "Mover data temporarily unavailable",
                   fill=(170, 180, 197), font=load_font(34))
-    scenes.append(np.asarray(image))
+scenes.append(np.asarray(image))
 
     image = Image.new("RGB", (width, height), (11, 18, 32))
     draw = ImageDraw.Draw(image)
