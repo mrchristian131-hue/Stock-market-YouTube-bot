@@ -787,10 +787,10 @@ scenes.append(np.asarray(image))
 image = Image.new("RGB", (width, height), (11, 18, 32))
 draw = ImageDraw.Draw(image)
 draw.text((70, 55), "Large-Cap Laggards", fill=(245, 247, 250), font=load_font(58))
-    draw.text((70, 125), "Selected liquid watchlist", fill=(170, 180, 197), font=load_font(25))
-    y = 205
+draw.text((70, 125), "Selected liquid watchlist", fill=(170, 180, 197), font=load_font(25))
+y = 205
 if top_laggards:
-        for mover in top_laggards:
+    for mover in top_laggards:
             sign = "+" if mover["percent"] >= 0 else ""
             draw.text(
                 (90, y),
