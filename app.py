@@ -665,7 +665,7 @@ draw.text((80, 155), "INDEX", fill=(170, 180, 197), font=load_font(28))
 draw.text((450, 155), "PRICE", fill=(170, 180, 197), font=load_font(28))
 draw.text((745, 155), "CHANGE", fill=(170, 180, 197), font=load_font(28))
 draw.text((985, 155), "PERCENT", fill=(170, 180, 197), font=load_font(28))
-    market_rows(draw)
+market_rows(draw)
 scenes.append(np.asarray(image))
 
 image = Image.new("RGB", (width, height), (11, 18, 32))
