@@ -719,12 +719,12 @@ if news_stories:
         draw.text((70, 55), "Top Market Stories", fill=(245, 247, 250), font=load_font(58))
         y = 150
 
-            for story_index, story in enumerate(page_stories, start=page_index + 1):
-                draw.text(
-                    (80, y),
-                    f"{story_index}. {story['publisher']}",
-                    fill=(170, 180, 197),
-                    font=load_font(26),
+        for story_index, story in enumerate(page_stories, start=page_index + 1):
+            draw.text(
+                (80, y),
+                f"{story_index}. {story['publisher']}",
+                fill=(170, 180, 197),
+                font=load_font(26),
                 )
                 y += 45
 
