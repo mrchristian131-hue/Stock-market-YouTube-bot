@@ -710,14 +710,14 @@ for sector in weakest_sectors:
     y += 120
 scenes.append(np.asarray(image))
 
-    # Market headlines
-    if news_stories:
-        for page_index in range(0, len(news_stories), 3):
-            page_stories = news_stories[page_index:page_index + 3]
-            image = Image.new("RGB", (width, height), (11, 18, 32))
-            draw = ImageDraw.Draw(image)
-            draw.text((70, 55), "Top Market Stories", fill=(245, 247, 250), font=load_font(58))
-            y = 150
+# Market headlines
+if news_stories:
+    for page_index in range(0, len(news_stories), 3):
+        page_stories = news_stories[page_index:page_index + 3]
+        image = Image.new("RGB", (width, height), (11, 18, 32))
+        draw = ImageDraw.Draw(image)
+        draw.text((70, 55), "Top Market Stories", fill=(245, 247, 250), font=load_font(58))
+        y = 150
 
             for story_index, story in enumerate(page_stories, start=page_index + 1):
                 draw.text(
