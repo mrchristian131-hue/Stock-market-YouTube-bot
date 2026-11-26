@@ -658,47 +658,50 @@ draw.text((70, 565), f"Session: {day_type.title()}", fill=(245, 247, 250), font=
 draw.text((70, 610), "Narrated private preview", fill=(170, 180, 197), font=load_font(24))
 scenes.append(np.asarray(image))
 
-    image = Image.new("RGB", (width, height), (11, 18, 32))
-    draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Major Index Board", fill=(245, 247, 250), font=load_font(58))
-    draw.text((80, 155), "INDEX", fill=(170, 180, 197), font=load_font(28))
-    draw.text((450, 155), "PRICE", fill=(170, 180, 197), font=load_font(28))
-    draw.text((745, 155), "CHANGE", fill=(170, 180, 197), font=load_font(28))
-    draw.text((985, 155), "PERCENT", fill=(170, 180, 197), font=load_font(28))
+image = Image.new("RGB", (width, height), (11, 18, 32))
+draw = ImageDraw.Draw(image)
+draw.text((70, 55), "Major Index Board", fill=(245, 247, 250), font=load_font(58))
+draw.text((80, 155), "INDEX", fill=(170, 180, 197), font=load_font(28))
+draw.text((450, 155), "PRICE", fill=(170, 180, 197), font=load_font(28))
+draw.text((745, 155), "CHANGE", fill=(170, 180, 197), font=load_font(28))
+draw.text((985, 155), "PERCENT", fill=(170, 180, 197), font=load_font(28))
     market_rows(draw)
-    scenes.append(np.asarray(image))
+scenes.append(np.asarray(image))
 
-    image = Image.new("RGB", (width, height), (11, 18, 32))
-    draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Index Leadership", fill=(245, 247, 250), font=load_font(58))
-    draw.text((70, 150), f"Broad market tone: {tone}", fill=(170, 180, 197), font=load_font(34))
-    if strongest:
+image = Image.new("RGB", (width, height), (11, 18, 32))
+draw = ImageDraw.Draw(image)
+draw.text((70, 55), "Index Leadership", fill=(245, 247, 250), font=load_font(58))
+draw.text((70, 150), f"Broad market tone: {tone}", fill=(170, 180, 197), font=load_font(34))
+if strongest:
         draw.text((80, 280), "Strongest index", fill=(170, 180, 197), font=load_font(30))
         draw.text((80, 340), f"{strongest['name']}  {'+' if strongest['percent'] >= 0 else ''}{strongest['percent']:.2f}%",
                   fill=(245, 247, 250), font=load_font(48))
-    if weakest:
+if weakest:
         draw.text((80, 470), "Weakest index", fill=(170, 180, 197), font=load_font(30))
         draw.text((80, 530), f"{weakest['name']}  {'+' if weakest['percent'] >= 0 else ''}{weakest['percent']:.2f}%",
                   fill=(245, 247, 250), font=load_font(48))
-    scenes.append(np.asarray(image))
+scenes.append(np.asarray(image))
 
-    image = Image.new("RGB", (width, height), (11, 18, 32))
-    draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Sector Leaders", fill=(245, 247, 250), font=load_font(58))
-    y = 190
-    for sector in strongest_sectors:
-        sign = "+" if sector["percent"] >= 0 else ""
-        draw.text((90, y), f"{sector['name']}: {sign}{sector['percent']:.2f}%",
-                  fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
-                  font=load_font(42))
-        y += 120
-    scenes.append(np.asarray(image))
+image = Image.new("RGB", (width, height), (11, 18, 32))
+draw = ImageDraw.Draw(image)
+draw.text((70, 55), "Sector Leaders", fill=(245, 247, 250), font=load_font(58))
+y = 190
+for sector in strongest_sectors:
+    sign = "+" if sector["percent"] >= 0 else ""
+    draw.text(
+        (90, y), 
+        f"{sector['name']}: {sign}{sector['percent']:.2f}%",
+        fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
+        font=load_font(42)
+    )
+    y += 120
+scenes.append(np.asarray(image))
 
-    image = Image.new("RGB", (width, height), (11, 18, 32))
-    draw = ImageDraw.Draw(image)
-    draw.text((70, 55), "Sector Laggards", fill=(245, 247, 250), font=load_font(58))
-    y = 190
-    for sector in weakest_sectors:
+image = Image.new("RGB", (width, height), (11, 18, 32))
+draw = ImageDraw.Draw(image)
+draw.text((70, 55), "Sector Laggards", fill=(245, 247, 250), font=load_font(58))
+y = 190
+for sector in weakest_sectors:
         sign = "+" if sector["percent"] >= 0 else ""
         draw.text((90, y), f"{sector['name']}: {sign}{sector['percent']:.2f}%",
                   fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
@@ -834,7 +837,7 @@ scenes.append(np.asarray(image))
     ]
     y = 190
     for item in checklist_items:
-        draw.text((95, y), f"â¢ {item}", fill=(245, 247, 250), font=load_font(34))
+        draw.text((95, y), f"-  {item}", fill=(245, 247, 250), font=load_font(34))
         y += 92
     scenes.append(np.asarray(image))
 
@@ -860,7 +863,7 @@ scenes.append(np.asarray(image))
     draw.text((70, 115), "Mr. Christian", fill=(245, 247, 250), font=load_font(72))
     draw.text((70, 225), "Daily Market Update", fill=(170, 180, 197), font=load_font(46))
     draw.rectangle((70, 300, 430, 308), fill=(39, 104, 189))
-    draw.text((70, 360), "Direction â¢ Breadth â¢ Rotation â¢ Momentum", fill=(245, 247, 250), font=load_font(34))
+    draw.text((70, 360), "Direction |  Breadth |  Rotation |  Momentum", fill=(245, 247, 250), font=load_font(34))
     draw.text((70, 455), "Thanks for watching.", fill=(245, 247, 250), font=load_font(38))
     draw.text((70, 520), "Informational purposes only â¢ Not financial advice", fill=(170, 180, 197), font=load_font(24))
     scenes.append(np.asarray(image))
