@@ -726,10 +726,10 @@ if news_stories:
                 fill=(170, 180, 197),
                 font=load_font(26),
                 )
-                y += 45
+            y += 45
 
-                wrapped = textwrap.wrap(story["title"], width=54)[:3]
-                for line in wrapped:
+            wrapped = textwrap.wrap(story["title"], width=54)[:3]
+            for line in wrapped:
                     draw.text(
                         (100, y),
                         line,
@@ -737,7 +737,7 @@ if news_stories:
                         font=load_font(30),
                     )
                     y += 42
-                y += 42
+            y += 42
 
             draw.text(
                 (70, 655),
@@ -746,7 +746,7 @@ if news_stories:
                 font=load_font(21),
             )
             scenes.append(np.asarray(image))
-    else:
+else:
         image = Image.new("RGB", (width, height), (11, 18, 32))
         draw = ImageDraw.Draw(image)
         draw.text((70, 55), "Top Market Stories", fill=(245, 247, 250), font=load_font(58))
