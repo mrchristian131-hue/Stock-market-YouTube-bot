@@ -702,12 +702,13 @@ draw = ImageDraw.Draw(image)
 draw.text((70, 55), "Sector Laggards", fill=(245, 247, 250), font=load_font(58))
 y = 190
 for sector in weakest_sectors:
-        sign = "+" if sector["percent"] >= 0 else ""
-        draw.text((90, y), f"{sector['name']}: {sign}{sector['percent']:.2f}%",
-                  fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
-                  font=load_font(42))
-        y += 120
-    scenes.append(np.asarray(image))
+    sign = "+" if sector["percent"] >= 0 else ""
+    draw.text(
+        (90, y), f"{sector['name']}: {sign}{sector['percent']:.2f}%",
+        fill=(55, 163, 27) if sector["percent"] >= 0 else (255, 51, 43),
+        font=load_font(42))
+    y += 120
+scenes.append(np.asarray(image))
 
     # Market headlines
     if news_stories:
